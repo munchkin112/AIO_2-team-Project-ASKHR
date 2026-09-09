@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AskHR 데이터베이스 설계서</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1f1b24; --muted:#6b6478; --line:#e6e1ec; --soft:#f7f5fa;
+    --brand:#4a1a5c; --brand-2:#7c3aed; --brand-soft:#efe7f7;
+    --code-bg:#f3f0f7; --ok:#1a7f4b; --warn:#b26a00; --err:#b3261e;
+    --pk:#b26a00; --fk:#1d5fbf;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:15px;line-height:1.6}
+  a{color:var(--brand-2);text-decoration:none} a:hover{text-decoration:underline}
+  code,pre{font-family:"Cascadia Code","JetBrains Mono",Consolas,"D2Coding",monospace;font-size:13px}
+  code{background:var(--code-bg);padding:1px 6px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;margin:8px 0 0}
+  pre code{background:none;padding:0}
+  h1,h2,h3,h4{line-height:1.3;margin:0}
+  h2{font-size:24px;color:var(--brand);padding-bottom:8px;border-bottom:2px solid var(--brand);margin:56px 0 20px}
+  h3{font-size:18px;margin:32px 0 12px;color:var(--brand)}
+  h4{font-size:14px;margin:18px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  p{margin:8px 0}
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--soft);font-weight:600;white-space:nowrap}
+  tbody tr:nth-child(even){background:#fbfafd}
+  td code{white-space:nowrap}
+  .c{text-align:center}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1400px;margin:0 auto}
+  nav{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);background:var(--soft);font-size:13.5px}
+  nav .brand{font-weight:800;color:var(--brand);font-size:16px;margin-bottom:14px}
+  nav ul{list-style:none;padding:0;margin:0} nav li{margin:4px 0} nav li.sub{padding-left:14px}
+  nav a{color:var(--fg)} nav a:hover{color:var(--brand-2)}
+  main{padding:40px 48px 80px;min-width:0}
+  .hero{display:flex;align-items:flex-start;gap:20px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .hero .mark{width:56px;height:56px;border-radius:14px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:26px;flex:none}
+  .hero h1{font-size:30px;color:var(--brand)} .hero .sub{color:var(--muted);margin-top:4px}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:18px 0 0}
+  .meta div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .meta b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .tag{display:inline-block;font-weight:700;font-size:11px;padding:1px 7px;border-radius:5px;font-family:Consolas,monospace;letter-spacing:.03em}
+  .PK{color:#fff;background:var(--pk)} .FK{color:#fff;background:var(--fk)} .NN{color:var(--muted);background:#eee}
+  .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .src{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .src.ok{color:var(--ok);border-color:#bfe3cc} .src.doc{color:var(--fk);border-color:#c9d9f5} .src.todo{color:var(--warn);border-color:#f0d9a8}
+  .card{border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:18px 0 26px;break-inside:avoid}
+  .card .head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:6px}
+  .card .name{font-family:Consolas,monospace;font-size:18px;font-weight:700;color:var(--brand)}
+  .card .summary{color:var(--muted);width:100%;margin-top:2px}
+  .note{background:var(--brand-soft);border-left:4px solid var(--brand-2);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:14px}
+  .warn{background:#fff6e5;border-left-color:var(--warn)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px} .two>div{min-width:0}
+  .figure{margin:14px 0;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;background:#fff}
+  .figure svg{display:block;min-width:820px;max-width:100%}
+  .cap{font-size:13px;color:var(--muted);margin-top:6px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0 0}
+  footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  ul.callout li{margin:3px 0}
+  @media (max-width:1000px){ .layout{grid-template-columns:1fr} nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)} main{padding:28px 20px} .two{grid-template-columns:1fr} }
+  @media print{
+    nav{display:none} .layout{display:block} main{padding:0} body{font-size:12px}
+    h2{break-before:page;margin-top:0} h2:first-of-type{break-before:auto}
+    .card{break-inside:avoid} pre{white-space:pre-wrap;word-break:break-all}
+    a{color:inherit} .figure svg{min-width:0;width:100%}
+    @page{size:A4;margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">AskHR DB</div>
+  <ul>
+    <li><a href="#overview">1. 개요</a></li>
+    <li><a href="#erd">2. ERD</a></li>
+    <li class="sub"><a href="#erd-logical">논리 ERD</a></li>
+    <li class="sub"><a href="#erd-physical">물리 ERD</a></li>
+    <li><a href="#tables">3. 테이블 명세</a></li>
+    <li class="sub"><a href="#t-profiles">profiles</a></li>
+    <li class="sub"><a href="#t-conversations">conversations</a></li>
+    <li class="sub"><a href="#t-messages">messages</a></li>
+    <li><a href="#relations">4. 관계 · 삭제 정책</a></li>
+    <li><a href="#triggers">5. 트리거 · 함수</a></li>
+    <li><a href="#rls">6. 보안 · RLS</a></li>
+    <li><a href="#access">7. API ↔ 테이블 접근</a></li>
+    <li><a href="#redis">8. Redis 데이터 구조</a></li>
+    <li><a href="#index">9. 인덱스 · 성능</a></li>
+    <li><a href="#gaps">10. 알려진 차이 · 후속 과제</a></li>
+    <li><a href="#ddl">부록. 참고 DDL</a></li>
+  </ul>
+</nav>
+
+<main>
+  <div class="hero">
+    <div class="mark">H</div>
+    <div>
+      <h1>AskHR 데이터베이스 설계서</h1>
+      <div class="sub">사내 규정 AI 챗봇 · 영구 저장소(Supabase PostgreSQL)와 운영 저장소(Redis) 설계</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><b>DBMS</b>Supabase (PostgreSQL) · 스키마 <code>public</code> + 관리형 <code>auth</code></div>
+    <div><b>보조 저장소</b>Redis (캐시 · 사용량 로그)</div>
+    <div><b>작성일</b>2026-09-09</div>
+    <div><b>근거</b>설계서(md) · <code>docs/db/01_create_table.sql</code> (트리거 · RLS) · 백엔드 앱 코드 (접근 경로 · 제약)</div>
+    <div><b>관련 문서</b>API 설계 문서 · 화면 설계서</div>
+  </div>
+  <div class="legend">
+    <span><span class="src ok">코드 확인</span> SQL 또는 앱 코드에서 확인한 사실</span>
+    <span><span class="src doc">설계서</span> 설계서(md)에만 정의되어 있고 배포 DDL은 미확인</span>
+    <span><span class="src todo">후속 과제</span> 설계와 구현이 다르거나 아직 없음</span>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="overview">1. 개요</h2>
+  <h3>1.1 목적</h3>
+  <p>AskHR AI 챗봇 서비스가 사용자·대화·메시지를 영구 보관하고, 운영 지표(응답 지연 · 토큰 사용량)를 가볍게 기록하기 위한 데이터 구조를 정의한다. 기획·개발·운영 담당자가 같은 기준으로 테이블, 관계, 접근 권한, 삭제 정책을 이해하는 것을 목적으로 한다.</p>
+
+  <h3>1.2 저장소 구성</h3>
+  <table>
+    <thead><tr><th>저장소</th><th>보관 대상</th><th>성격</th><th>장애 시 동작</th></tr></thead>
+    <tbody>
+      <tr><td>Supabase Auth (<code>auth.users</code>)</td><td>계정 · 이메일 · 비밀번호 해시 · JWT</td><td>Supabase 관리형. 앱은 직접 읽고 쓰지 않는다</td><td>로그인 · 토큰 검증 불가</td></tr>
+      <tr><td>Supabase PostgreSQL (<code>public</code>)</td><td><code>profiles</code>, <code>conversations</code>, <code>messages</code></td><td>서비스 데이터. 영구 보관</td><td>서비스 중단</td></tr>
+      <tr><td>Redis</td><td>세션 캐시 · 메시지 목록 캐시 · 사용량 로그</td><td>운영 기록 · 사본. 지워져도 서비스는 동작</td><td>캐시는 무시하고 원본 조회, 대시보드만 503</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.3 설계 원칙</h3>
+  <ul class="callout">
+    <li><b>계정과 프로필 분리</b> — 이메일·비밀번호는 Supabase Auth가 관리하고, 앱 테이블은 <code>profiles</code>만 갖는다. 가입 시 트리거가 프로필을 자동 생성한다.</li>
+    <li><b>소유권은 DB가 판단</b> — 앱 코드가 <code>user_id</code>를 비교하지 않고 RLS(행 수준 보안) 정책이 “내 행”만 보이게 한다. 없는 행과 남의 행이 똑같이 0건으로 보여 존재 여부가 새지 않는다.</li>
+    <li><b>계층형 삭제</b> — 사용자 → 대화 → 메시지 순으로 <code>ON DELETE CASCADE</code>. 고아 행을 남기지 않는다.</li>
+    <li><b>운영 기록은 관계형 테이블에 넣지 않는다</b> — 응답 지연·토큰은 Redis 리스트에 대화당 최근 50건만 남긴다. 서비스 데이터가 아니므로 유실을 허용한다.</li>
+    <li><b>시각은 모두 <code>TIMESTAMPTZ</code></b> — UTC로 저장하고 화면에서 KST로 변환한다.</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="erd">2. ERD</h2>
+
+  <h3 id="erd-logical">2.1 논리 ERD</h3>
+  <div class="figure">
+<svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard,'Malgun Gothic',sans-serif" font-size="13">
+  <defs>
+    <g id="crow"><line x1="0" y1="0" x2="14" y2="-8" stroke="#4a1a5c" stroke-width="1.6"/><line x1="0" y1="0" x2="14" y2="0" stroke="#4a1a5c" stroke-width="1.6"/><line x1="0" y1="0" x2="14" y2="8" stroke="#4a1a5c" stroke-width="1.6"/></g>
+  </defs>
+  <!-- 사용자 -->
+  <rect x="40" y="40" width="180" height="110" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="40" y="40" width="180" height="34" rx="10" fill="#4a1a5c"/><rect x="40" y="62" width="180" height="12" fill="#4a1a5c"/>
+  <text x="130" y="63" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">사용자</text>
+  <text x="56" y="98">사용자 이름</text>
+  <text x="56" y="120">생성 일시</text>
+  <text x="56" y="140" fill="#6b6478" font-size="11.5">* 이메일 · 비밀번호는 Auth 관리</text>
+  <!-- 대화 -->
+  <rect x="320" y="40" width="180" height="110" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="320" y="40" width="180" height="34" rx="10" fill="#4a1a5c"/><rect x="320" y="62" width="180" height="12" fill="#4a1a5c"/>
+  <text x="410" y="63" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">대화</text>
+  <text x="336" y="98">제목</text>
+  <text x="336" y="120">생성 일시</text>
+  <text x="336" y="140">갱신 일시</text>
+  <!-- 메시지 -->
+  <rect x="600" y="40" width="180" height="110" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="600" y="40" width="180" height="34" rx="10" fill="#4a1a5c"/><rect x="600" y="62" width="180" height="12" fill="#4a1a5c"/>
+  <text x="690" y="63" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">메시지</text>
+  <text x="616" y="98">역할 (user · assistant · system)</text>
+  <text x="616" y="120">내용</text>
+  <text x="616" y="140">생성 일시</text>
+  <!-- relations -->
+  <line x1="220" y1="95" x2="306" y2="95" stroke="#4a1a5c" stroke-width="1.6"/>
+  <line x1="228" y1="87" x2="228" y2="103" stroke="#4a1a5c" stroke-width="1.6"/>
+  <use href="#crow" x="306" y="95" transform="rotate(180 306 95)"/>
+  <text x="263" y="86" text-anchor="middle" fill="#4a1a5c" font-size="11.5">1 : N (진행한다)</text>
+  <line x1="500" y1="95" x2="586" y2="95" stroke="#4a1a5c" stroke-width="1.6"/>
+  <line x1="508" y1="87" x2="508" y2="103" stroke="#4a1a5c" stroke-width="1.6"/>
+  <use href="#crow" x="586" y="95" transform="rotate(180 586 95)"/>
+  <text x="543" y="86" text-anchor="middle" fill="#4a1a5c" font-size="11.5">1 : N (포함한다)</text>
+  <text x="410" y="185" text-anchor="middle" fill="#6b6478" font-size="12">사용자 ||──o&lt; 대화 ||──o&lt; 메시지</text>
+</svg>
+    <div class="cap">한 사용자는 여러 대화를 진행하고, 한 대화는 여러 메시지를 포함한다. 대화는 반드시 사용자에게, 메시지는 반드시 대화에 속한다 (선택적 관계 없음).</div>
+  </div>
+
+  <h3 id="erd-physical">2.2 물리 ERD</h3>
+  <div class="figure">
+<svg viewBox="0 0 1000 330" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard,'Malgun Gothic',sans-serif" font-size="12">
+  <defs>
+    <g id="crow2"><line x1="0" y1="0" x2="14" y2="-8" stroke="#4a1a5c" stroke-width="1.6"/><line x1="0" y1="0" x2="14" y2="0" stroke="#4a1a5c" stroke-width="1.6"/><line x1="0" y1="0" x2="14" y2="8" stroke="#4a1a5c" stroke-width="1.6"/></g>
+  </defs>
+  <!-- auth.users (managed) -->
+  <rect x="20" y="40" width="190" height="112" rx="10" fill="#faf8fc" stroke="#9a8bb0" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <rect x="20" y="40" width="190" height="32" rx="10" fill="#9a8bb0"/><rect x="20" y="60" width="190" height="12" fill="#9a8bb0"/>
+  <text x="115" y="61" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">auth.users</text>
+  <text x="115" y="88" text-anchor="middle" fill="#6b6478" font-size="11">(Supabase 관리형)</text>
+  <text x="34" y="110" font-family="Consolas,monospace">id  uuid</text><text x="196" y="110" text-anchor="end" fill="#b26a00" font-weight="700" font-size="10">PK</text>
+  <text x="34" y="130" font-family="Consolas,monospace">email</text>
+  <text x="34" y="146" font-family="Consolas,monospace" fill="#6b6478">encrypted_password …</text>
+
+  <!-- profiles -->
+  <rect x="270" y="40" width="200" height="112" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="270" y="40" width="200" height="32" rx="10" fill="#4a1a5c"/><rect x="270" y="60" width="200" height="12" fill="#4a1a5c"/>
+  <text x="370" y="61" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">profiles</text>
+  <g font-family="Consolas,monospace">
+    <text x="284" y="92">id          uuid</text><text x="456" y="92" text-anchor="end" fill="#b26a00" font-weight="700" font-size="10">PK</text>
+    <text x="284" y="112">username    vc(30)</text>
+    <text x="284" y="132">created_at  tstz</text>
+  </g>
+
+  <!-- conversations -->
+  <rect x="530" y="40" width="210" height="150" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="530" y="40" width="210" height="32" rx="10" fill="#4a1a5c"/><rect x="530" y="60" width="210" height="12" fill="#4a1a5c"/>
+  <text x="635" y="61" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">conversations</text>
+  <g font-family="Consolas,monospace">
+    <text x="544" y="92">id          uuid</text><text x="726" y="92" text-anchor="end" fill="#b26a00" font-weight="700" font-size="10">PK</text>
+    <text x="544" y="112">user_id     uuid</text><text x="726" y="112" text-anchor="end" fill="#1d5fbf" font-weight="700" font-size="10">FK</text>
+    <text x="544" y="132">title       vc(100)</text>
+    <text x="544" y="152">created_at  tstz</text>
+    <text x="544" y="172">updated_at  tstz</text>
+  </g>
+
+  <!-- messages -->
+  <rect x="790" y="40" width="200" height="150" rx="10" fill="#fff" stroke="#4a1a5c" stroke-width="1.8"/>
+  <rect x="790" y="40" width="200" height="32" rx="10" fill="#4a1a5c"/><rect x="790" y="60" width="200" height="12" fill="#4a1a5c"/>
+  <text x="890" y="61" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">messages</text>
+  <g font-family="Consolas,monospace">
+    <text x="804" y="92">id               uuid</text><text x="976" y="92" text-anchor="end" fill="#b26a00" font-weight="700" font-size="10">PK</text>
+    <text x="804" y="112">conversation_id  uuid</text><text x="976" y="112" text-anchor="end" fill="#1d5fbf" font-weight="700" font-size="10">FK</text>
+    <text x="804" y="132">role             vc(20)</text>
+    <text x="804" y="152">content          text</text>
+    <text x="804" y="172">created_at       tstz</text>
+  </g>
+
+  <!-- relations -->
+  <line x1="210" y1="96" x2="262" y2="96" stroke="#9a8bb0" stroke-width="1.6" stroke-dasharray="5 3"/>
+  <line x1="218" y1="88" x2="218" y2="104" stroke="#9a8bb0" stroke-width="1.6"/>
+  <line x1="254" y1="88" x2="254" y2="104" stroke="#9a8bb0" stroke-width="1.6"/>
+  <text x="236" y="84" text-anchor="middle" fill="#6b6478" font-size="10.5">1 : 1</text>
+  <text x="236" y="120" text-anchor="middle" fill="#6b6478" font-size="10.5">트리거 생성</text>
+
+  <line x1="470" y1="108" x2="516" y2="108" stroke="#4a1a5c" stroke-width="1.6"/>
+  <line x1="478" y1="100" x2="478" y2="116" stroke="#4a1a5c" stroke-width="1.6"/>
+  <use href="#crow2" x="516" y="108" transform="rotate(180 516 108)"/>
+  <text x="497" y="96" text-anchor="middle" fill="#4a1a5c" font-size="10.5">1 : N</text>
+  <text x="497" y="134" text-anchor="middle" fill="#b3261e" font-size="10">CASCADE</text>
+
+  <line x1="740" y1="108" x2="776" y2="108" stroke="#4a1a5c" stroke-width="1.6"/>
+  <line x1="748" y1="100" x2="748" y2="116" stroke="#4a1a5c" stroke-width="1.6"/>
+  <use href="#crow2" x="776" y="108" transform="rotate(180 776 108)"/>
+  <text x="758" y="96" text-anchor="middle" fill="#4a1a5c" font-size="10.5">1 : N</text>
+  <text x="758" y="134" text-anchor="middle" fill="#b3261e" font-size="10">CASCADE</text>
+
+  <!-- legend -->
+  <g font-size="11.5" fill="#6b6478">
+    <text x="20" y="230">· <tspan fill="#b26a00" font-weight="700">PK</tspan> 기본키 &nbsp; <tspan fill="#1d5fbf" font-weight="700">FK</tspan> 외래키 &nbsp; vc(n) = VARCHAR(n) &nbsp; tstz = TIMESTAMPTZ</text>
+    <text x="20" y="250">· 점선 상자 <tspan fill="#9a8bb0">auth.users</tspan>는 Supabase가 관리하며 앱 스키마에 속하지 않는다. profiles.id는 가입 트리거가 auth.users.id와 같은 값으로 채운다.</text>
+    <text x="20" y="270">· 실선 관계는 FK + ON DELETE CASCADE. 부모가 지워지면 자식 행도 함께 삭제된다.</text>
+    <text x="20" y="305" font-family="Consolas,monospace" fill="#4a1a5c">auth.users ─(trigger)─ profiles ||──o&lt; conversations ||──o&lt; messages</text>
+  </g>
+</svg>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="tables">3. 상세 테이블 명세</h2>
+  <p>컬럼 정의는 설계서를 기준으로 하며, 각 표 아래에 SQL·앱 코드에서 확인한 실제 사용 방식을 덧붙인다.</p>
+
+  <div class="card" id="t-profiles">
+    <div class="head"><span class="name">profiles</span><span class="pill">사용자 프로필</span>
+      <div class="summary">시스템 사용자의 기본 프로필 정보를 저장한다. 계정 자체(이메일 · 비밀번호)는 <code>auth.users</code>에 있고, 이 테이블은 앱이 참조하는 사용자 식별자와 표시 이름만 갖는다.</div></div>
+    <table>
+      <thead><tr><th>컬럼명</th><th>데이터 타입</th><th class="c">키</th><th class="c">Null</th><th>기본값</th><th>제약조건 / 설명</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td><code>UUID</code></td><td class="c"><span class="tag PK">PK</span></td><td class="c">NOT NULL</td><td><code>gen_random_uuid()</code></td><td>사용자 고유 식별자. 실제로는 가입 트리거가 <code>auth.users.id</code>와 같은 값을 넣으므로 기본값은 사용되지 않는다</td></tr>
+        <tr><td><code>username</code></td><td><code>VARCHAR(30)</code></td><td class="c">-</td><td class="c">NOT NULL</td><td>-</td><td>사용자 이름(닉네임). 가입 시 이메일의 <code>@</code> 앞부분으로 자동 채움</td></tr>
+        <tr><td><code>created_at</code></td><td><code>TIMESTAMPTZ</code></td><td class="c">-</td><td class="c">NOT NULL</td><td><code>CURRENT_TIMESTAMP</code></td><td>프로필 생성 일시</td></tr>
+      </tbody>
+    </table>
+    <h4>구현 참고</h4>
+    <ul class="callout">
+      <li><span class="src ok">코드 확인</span> 앱은 이 테이블에 <b>직접 INSERT 하지 않는다</b>. <code>auth.users</code> INSERT 후 트리거 <code>on_auth_user_created</code>가 행을 만든다 (5장).</li>
+      <li><span class="src ok">코드 확인</span> 읽기 경로는 <code>GET /me/profile</code> 하나이며 RLS “select own profile” 아래에서 조회한다. 행이 없으면 404.</li>
+      <li><span class="src doc">설계서</span> <code>username</code> 길이 30 — 이메일 로컬파트가 30자를 넘는 경우의 처리(절단 여부)는 DDL에서 확인 필요.</li>
+    </ul>
+  </div>
+
+  <div class="card" id="t-conversations">
+    <div class="head"><span class="name">conversations</span><span class="pill">대화</span>
+      <div class="summary">사용자가 진행하는 개별 대화 세션(채팅방)을 저장한다. 사이드바의 “최근 대화” 목록과 채팅 화면 헤더 제목의 원본이다.</div></div>
+    <table>
+      <thead><tr><th>컬럼명</th><th>데이터 타입</th><th class="c">키</th><th class="c">Null</th><th>기본값</th><th>제약조건 / 설명</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td><code>UUID</code></td><td class="c"><span class="tag PK">PK</span></td><td class="c">NOT NULL</td><td><code>gen_random_uuid()</code></td><td>대화 고유 식별자. API 경로 <code>{conversation_id}</code>와 Redis 키에 사용</td></tr>
+        <tr><td><code>user_id</code></td><td><code>UUID</code></td><td class="c"><span class="tag FK">FK</span></td><td class="c">NOT NULL</td><td>-</td><td>작성자. <code>profiles.id</code> 참조, <code>ON DELETE CASCADE</code>. RLS 소유권 판단 기준</td></tr>
+        <tr><td><code>title</code></td><td><code>VARCHAR(100)</code></td><td class="c">-</td><td class="c">NULL</td><td><code>'새로운 대화'</code></td><td>대화 제목. 앱이 생성 시 항상 값을 보내고(1~100자), 첫 사용자 메시지로 자동 갱신</td></tr>
+        <tr><td><code>created_at</code></td><td><code>TIMESTAMPTZ</code></td><td class="c">-</td><td class="c">NOT NULL</td><td><code>CURRENT_TIMESTAMP</code></td><td>대화 생성 일시. 목록 정렬 기준(내림차순)</td></tr>
+        <tr><td><code>updated_at</code></td><td><code>TIMESTAMPTZ</code></td><td class="c">-</td><td class="c">NOT NULL</td><td><code>CURRENT_TIMESTAMP</code></td><td>최근 메시지 발송/수정 일시 (설계 의도)</td></tr>
+      </tbody>
+    </table>
+    <h4>구현 참고</h4>
+    <ul class="callout">
+      <li><span class="src ok">코드 확인</span> 생성: <code>POST /me/conversations</code>가 <code>{user_id, title}</code>를 INSERT (RLS “insert own conversations”가 <code>user_id = auth.uid()</code>를 강제).</li>
+      <li><span class="src ok">코드 확인</span> 제목 자동 갱신: 대화의 <b>첫 번째</b> <code>user</code> 메시지가 저장될 때 본문의 연속 공백을 하나로 줄여 앞 50자를 <code>title</code>로 UPDATE. 비면 <code>'새 대화'</code>. 이 갱신은 서비스 롤로 수행된다.</li>
+      <li><span class="src ok">코드 확인</span> 제목이 NULL/빈 값이면 채팅·대시보드는 <code>'대화 미지정'</code>으로 표시한다.</li>
+      <li><span class="src todo">후속 과제</span> <code>updated_at</code>을 갱신하는 코드나 트리거가 없다. 현재는 <code>created_at</code>과 같은 값으로 남는다 (10장).</li>
+    </ul>
+  </div>
+
+  <div class="card" id="t-messages">
+    <div class="head"><span class="name">messages</span><span class="pill">대화 메시지</span>
+      <div class="summary">특정 대화 안에서 주고받은 개별 메시지를 저장한다. 사용자 질문, AI 답변, 그리고 맥락 초기화 지점을 나타내는 시스템 메시지가 한 테이블에 시간순으로 쌓인다.</div></div>
+    <table>
+      <thead><tr><th>컬럼명</th><th>데이터 타입</th><th class="c">키</th><th class="c">Null</th><th>기본값</th><th>제약조건 / 설명</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td><code>UUID</code></td><td class="c"><span class="tag PK">PK</span></td><td class="c">NOT NULL</td><td><code>gen_random_uuid()</code></td><td>메시지 고유 식별자. SSE <code>done</code> 이벤트의 <code>message_id</code></td></tr>
+        <tr><td><code>conversation_id</code></td><td><code>UUID</code></td><td class="c"><span class="tag FK">FK</span></td><td class="c">NOT NULL</td><td>-</td><td>소속 대화. <code>conversations.id</code> 참조, <code>ON DELETE CASCADE</code></td></tr>
+        <tr><td><code>role</code></td><td><code>VARCHAR(20)</code></td><td class="c">-</td><td class="c">NOT NULL</td><td>-</td><td>작성 주체. <code>'user'</code> 사용자 · <code>'assistant'</code> AI · <code>'system'</code> 맥락 구분선</td></tr>
+        <tr><td><code>content</code></td><td><code>TEXT</code></td><td class="c">-</td><td class="c">NOT NULL</td><td>-</td><td>메시지 본문. AI 답변은 마지막 줄에 <code>[규정명 &gt; 항목명]</code> 근거 표기를 포함</td></tr>
+        <tr><td><code>created_at</code></td><td><code>TIMESTAMPTZ</code></td><td class="c">-</td><td class="c">NOT NULL</td><td><code>CURRENT_TIMESTAMP</code></td><td>생성 일시. 조회 정렬 기준(오름차순)</td></tr>
+      </tbody>
+    </table>
+    <h4>구현 참고</h4>
+    <ul class="callout">
+      <li><span class="src ok">코드 확인</span> 저장 순서: 질문 수신 → <code>user</code> 행 INSERT → (첫 메시지면 제목 갱신) → 모델 스트리밍 → 완료 시 <code>assistant</code> 행 1건 INSERT. 스트림이 실패하면 <code>assistant</code> 행은 남지 않고 <code>user</code> 행만 남는다.</li>
+      <li><span class="src ok">코드 확인</span> <code>role</code> 값은 앱의 Pydantic <code>Literal["user","assistant","system"]</code>이 강제한다. DB의 CHECK 제약은 SQL에서 확인되지 않았다 (10장).</li>
+      <li><span class="src ok">코드 확인</span> 모델에 보내는 이력은 마지막 <code>system</code> 행 이후의 <code>user</code>/<code>assistant</code> 최근 20건이다. <code>system</code> 행은 “여기서부터 새 맥락”을 뜻하는 경계 역할만 하며 모델에 전달되지 않는다.</li>
+      <li><span class="src ok">코드 확인</span> 이 테이블의 읽기·쓰기는 모두 서비스 롤 클라이언트로 수행되어 RLS를 우회한다. 접근 통제는 상위의 대화 소유 확인(<code>require_own_conversation</code>)이 담당한다 (7장).</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="relations">4. 관계 · 외래키 삭제 정책</h2>
+  <table>
+    <thead><tr><th>관계</th><th>자식 컬럼 → 부모 컬럼</th><th>카디널리티</th><th>ON DELETE</th><th>효과</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td>계정 ↔ 프로필</td><td><code>profiles.id</code> = <code>auth.users.id</code></td><td>1 : 1</td><td>—</td><td>가입 시 트리거가 프로필을 생성한다. 계정 삭제 시의 프로필 정리는 DDL에서 확인 필요</td><td><span class="src ok">코드 확인</span> 트리거 / <span class="src doc">설계서</span> FK 여부</td></tr>
+      <tr><td>프로필 → 대화</td><td><code>conversations.user_id</code> → <code>profiles.id</code></td><td>1 : N</td><td><code>CASCADE</code></td><td>사용자 탈퇴 시 그 사용자의 대화가 모두 삭제된다</td><td><span class="src doc">설계서</span></td></tr>
+      <tr><td>대화 → 메시지</td><td><code>messages.conversation_id</code> → <code>conversations.id</code></td><td>1 : N</td><td><code>CASCADE</code></td><td>대화 삭제(<code>DELETE /me/conversations/{id}</code>) 시 메시지가 모두 삭제된다</td><td><span class="src doc">설계서</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <b>삭제 연쇄와 Redis</b> — 대화가 삭제되어도 Redis의 <code>usage_log:{conversation_id}</code>는 지워지지 않는다. 대시보드는 이 잔여 로그를 <code>'삭제되었거나 정보가 없는 대화'</code> 제목으로 계속 집계한다 (의도된 동작: 운영 지표는 대화 삭제와 무관하게 보존). <code>messages:{conversation_id}</code> 캐시는 TTL 300초로 자연 소멸한다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="triggers">5. 트리거 · 함수</h2>
+  <p><span class="src ok">코드 확인</span> <code>docs/db/01_create_table.sql</code></p>
+  <table>
+    <thead><tr><th>객체</th><th>종류</th><th>대상 · 시점</th><th>동작</th></tr></thead>
+    <tbody>
+      <tr><td><code>public.handle_new_user()</code></td><td>함수 (plpgsql, <code>SECURITY DEFINER</code>)</td><td>—</td><td><code>profiles(id, username)</code>에 <code>(NEW.id, split_part(NEW.email, '@', 1))</code> INSERT</td></tr>
+      <tr><td><code>on_auth_user_created</code></td><td>트리거</td><td><code>auth.users</code> · <code>AFTER INSERT FOR EACH ROW</code></td><td>위 함수 실행 → 가입 즉시 프로필 자동 생성</td></tr>
+    </tbody>
+  </table>
+  <pre><code>create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    insert into public.profiles (id, username)
+    values (new.id, split_part(new.email, '@', 1));
+    return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+    after insert on auth.users
+    for each row execute function public.handle_new_user();</code></pre>
+  <ul class="callout">
+    <li><code>SECURITY DEFINER</code>인 이유: 가입 시점에는 사용자 JWT가 없어 RLS 아래에서 <code>profiles</code>에 INSERT 할 수 없다. 함수 소유자 권한으로 실행해 정책을 우회한다. <code>profiles</code>에는 INSERT 정책이 없으므로 이 경로가 프로필을 만드는 유일한 방법이다.</li>
+    <li>예: <code>hong.gildong@company.com</code> 가입 → <code>username = 'hong.gildong'</code></li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="rls">6. 보안 · RLS (행 수준 보안)</h2>
+  <p><span class="src ok">코드 확인</span> 세 테이블 모두 <code>ENABLE ROW LEVEL SECURITY</code>. 사용자 JWT로 접속하는 anon 클라이언트에는 아래 정책이 적용되고, 서버 전용 서비스 롤 클라이언트는 정책을 우회한다.</p>
+  <table>
+    <thead><tr><th>테이블</th><th>정책명</th><th>명령</th><th>조건</th><th>의미</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2"><code>profiles</code></td><td>select own profile</td><td>SELECT</td><td><code>auth.uid() = id</code></td><td>내 프로필만 조회</td></tr>
+      <tr><td>update own profile</td><td>UPDATE</td><td><code>auth.uid() = id</code></td><td>내 프로필만 수정 (현재 API 없음)</td></tr>
+      <tr><td rowspan="4"><code>conversations</code></td><td>select own conversations</td><td>SELECT</td><td><code>auth.uid() = user_id</code></td><td>내 대화만 조회 → 목록 · 소유 확인</td></tr>
+      <tr><td>insert own conversations</td><td>INSERT</td><td>WITH CHECK <code>auth.uid() = user_id</code></td><td>다른 사람 명의로 대화 생성 불가</td></tr>
+      <tr><td>update own conversations</td><td>UPDATE</td><td><code>auth.uid() = user_id</code></td><td>내 대화만 수정</td></tr>
+      <tr><td>delete own conversations</td><td>DELETE</td><td><code>auth.uid() = user_id</code></td><td>내 대화만 삭제 → 남의 대화는 0건 삭제 = 404</td></tr>
+      <tr><td rowspan="2"><code>messages</code></td><td>select own messages</td><td>SELECT</td><td>EXISTS (내가 소유한 <code>conversations</code>에 속함)</td><td>내 대화의 메시지만 조회</td></tr>
+      <tr><td>insert own messages</td><td>INSERT</td><td>WITH CHECK (내가 소유한 <code>conversations</code>에 속함)</td><td>내 대화에만 메시지 추가</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <b>없는 정책도 설계다</b> — <code>profiles</code> INSERT/DELETE, <code>messages</code> UPDATE/DELETE 정책이 없다. 즉 사용자 토큰으로는 프로필을 만들거나 지울 수 없고(트리거 · 계정 삭제가 담당), 메시지를 고치거나 개별 삭제할 수 없다(대화 삭제 시 CASCADE만 허용). 채팅 기록의 불변성을 DB 수준에서 보장한다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="access">7. API ↔ 테이블 접근 매트릭스</h2>
+  <p><span class="src ok">코드 확인</span> 백엔드는 두 종류의 Supabase 클라이언트를 쓴다. <b>anon + 사용자 JWT</b>(RLS 적용)와 <b>service role</b>(RLS 우회). 어느 경로로 어떤 테이블을 만지는지가 이 시스템의 실질적 접근 통제다.</p>
+  <table>
+    <thead><tr><th>API</th><th>클라이언트</th><th><code>profiles</code></th><th><code>conversations</code></th><th><code>messages</code></th><th>Redis</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /auth/signup</code></td><td>anon (Auth)</td><td>INSERT (트리거)</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td><code>POST /auth/login</code></td><td>anon (Auth)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>🔒 공통 토큰 검증</td><td>anon (Auth)</td><td>—</td><td>—</td><td>—</td><td>R/W <code>session:*</code></td></tr>
+      <tr><td><code>GET /me/profile</code></td><td>anon + JWT (RLS)</td><td>SELECT</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td><code>GET /me/conversations</code></td><td>anon + JWT (RLS)</td><td>—</td><td>SELECT</td><td>—</td><td>—</td></tr>
+      <tr><td><code>POST /me/conversations</code></td><td>anon + JWT (RLS)</td><td>—</td><td>INSERT</td><td>—</td><td>—</td></tr>
+      <tr><td><code>DELETE /me/conversations/{id}</code></td><td>anon + JWT (RLS)</td><td>—</td><td>DELETE (→ messages CASCADE)</td><td>—</td><td>— (<code>usage_log</code> 잔존)</td></tr>
+      <tr><td>🔒 대화 소유 확인 (<code>/conversations/*</code>)</td><td>anon + JWT (RLS)</td><td>—</td><td>SELECT id</td><td>—</td><td>—</td></tr>
+      <tr><td><code>GET /conversations/{id}/messages</code></td><td><b>service role</b></td><td>—</td><td>—</td><td>SELECT (20건)</td><td>R/W <code>messages:{id}</code></td></tr>
+      <tr><td><code>POST /conversations/{id}/chat</code></td><td><b>service role</b></td><td>—</td><td>SELECT title · UPDATE title(첫 메시지)</td><td>INSERT user · SELECT 이력 · INSERT assistant</td><td>DEL <code>messages:{id}</code> · LPUSH <code>usage_log:{id}</code></td></tr>
+      <tr><td><code>GET /analytics/*</code></td><td><b>service role</b></td><td>—</td><td>SELECT id,title (전체)</td><td>—</td><td>SCAN/LRANGE <code>usage_log:*</code></td></tr>
+    </tbody>
+  </table>
+  <ul class="callout">
+    <li>서비스 롤 경로는 반드시 <b>앞단의 RLS 소유 확인을 통과한 뒤</b>에만 실행된다. 즉 <code>/conversations/{id}/*</code>는 “RLS로 내 대화임을 확인 → 서비스 롤로 메시지 처리” 2단계다.</li>
+    <li>대시보드만 예외적으로 전체 사용자의 대화 제목을 읽는다 (MVP: 로그인 사용자 누구나 조회 가능). 운영 전환 시 관리자 권한 분리가 필요하다.</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="redis">8. Redis 데이터 구조</h2>
+  <p><span class="src ok">코드 확인</span> Redis는 원본이 아니라 사본·운영 기록이다. 캐시 실패는 예외로 올리지 않고 “캐시 없음”으로 처리한다(fail-open). 사용량 로그 저장소 연결 실패만 대시보드에서 503으로 드러난다.</p>
+  <table>
+    <thead><tr><th>키 패턴</th><th>타입</th><th>값</th><th>수명 · 크기</th><th>쓰는 곳</th><th>읽는 곳</th></tr></thead>
+    <tbody>
+      <tr><td><code>session:{sha256(access_token)}</code></td><td>String (JSON)</td><td><code>{"id": "&lt;uuid&gt;", "email": "..."}</code></td><td>TTL 300초</td><td>토큰 검증 miss 시</td><td>모든 🔒 요청</td></tr>
+      <tr><td><code>messages:{conversation_id}</code></td><td>String (JSON 배열)</td><td><code>MessageOut[]</code> 직렬화 (최대 20건, 오름차순)</td><td>TTL 300초 · 메시지 INSERT 시 DEL</td><td>메시지 조회 miss 시</td><td>메시지 조회 · 채팅 이력 구성</td></tr>
+      <tr><td><code>usage_log:{conversation_id}</code></td><td>List (JSON 문자열)</td><td><code>{"requested_at","latency_ms","prompt_tokens","response_tokens","total_tokens"}</code></td><td>LPUSH 후 LTRIM 0..49 → 최근 50건</td><td>답변 스트림 정상 완료 시</td><td><code>/analytics/*</code></td></tr>
+    </tbody>
+  </table>
+  <h4>usage_log 항목 예시</h4>
+  <pre><code>{
+  "requested_at": "2026-09-09T01:31:20.512+00:00",
+  "latency_ms": 6213,
+  "prompt_tokens": 2527,
+  "response_tokens": 183,
+  "total_tokens": 2710
+}</code></pre>
+  <ul class="callout">
+    <li>토큰 원문을 키에 쓰지 않고 SHA-256 해시를 쓴다 — Redis가 유출되어도 토큰 재사용이 불가능하다.</li>
+    <li>사용량 로그에는 질문·답변 본문, 이메일이 들어가지 않는다 (화면 설계서 7. 권한 및 데이터 기준과 일치).</li>
+    <li>토큰 수가 <code>null</code>인 항목은 대시보드에서 “토큰 미수집”으로 집계된다. 형식이 깨진 항목은 건너뛰고 <code>skipped_invalid_logs</code>에 센다.</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="index">9. 인덱스 · 성능</h2>
+  <p><span class="src todo">후속 과제</span> SQL 파일에 명시적 인덱스 정의가 없다. 현재 확인된 인덱스는 PK(유니크) 뿐이다. 아래는 앱의 실제 쿼리 패턴에서 도출한 <b>권장 인덱스</b>이며 아직 적용되지 않았다.</p>
+  <table>
+    <thead><tr><th>쿼리 (API)</th><th>조건 · 정렬</th><th>권장 인덱스</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>내 대화 목록 (<code>GET /me/conversations</code>)</td><td><code>WHERE user_id = ? ORDER BY created_at DESC</code></td><td><code>(user_id, created_at DESC)</code></td><td>RLS 조건과 정렬을 한 번에 커버</td></tr>
+      <tr><td>대화 소유 확인</td><td><code>WHERE id = ? AND user_id = ?</code></td><td>PK로 충분</td><td>—</td></tr>
+      <tr><td>메시지 목록 · 채팅 이력</td><td><code>WHERE conversation_id = ? ORDER BY created_at ASC LIMIT 20</code></td><td><code>(conversation_id, created_at)</code></td><td>FK 컬럼은 PostgreSQL이 자동 인덱스를 만들지 않으므로 필수에 가깝다. CASCADE 삭제 속도에도 영향</td></tr>
+      <tr><td>첫 사용자 메시지 판별 (제목 갱신)</td><td><code>WHERE conversation_id = ? AND role = 'user' ORDER BY created_at, id LIMIT 1</code></td><td>위 인덱스로 커버</td><td>—</td></tr>
+      <tr><td>대시보드 대화 목록</td><td><code>SELECT id, title ORDER BY id</code> (500건씩 페이지)</td><td>PK로 충분</td><td>전체 스캔이지만 대화 수가 작음</td></tr>
+    </tbody>
+  </table>
+  <pre><code>-- 권장 (미적용)
+create index if not exists idx_conversations_user_created
+    on conversations (user_id, created_at desc);
+create index if not exists idx_messages_conversation_created
+    on messages (conversation_id, created_at);</code></pre>
+  <h4>용량 · 보존</h4>
+  <ul class="callout">
+    <li><code>messages.content</code>는 TEXT이며 AI 답변은 보통 수백 자, 규정 요약 시 최대 수천 자. 대화당 메시지 수 제한은 없다.</li>
+    <li>보존 기간 정책은 없다 (사용자가 대화를 삭제하기 전까지 영구). 운영 전환 시 비활성 대화 아카이빙 기준을 정할 필요가 있다.</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="gaps">10. 알려진 차이 · 후속 과제</h2>
+  <table>
+    <thead><tr><th>#</th><th>항목</th><th>설계서</th><th>구현 (코드 확인)</th><th>권장 조치</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>conversations.updated_at</code></td><td>최근 메시지 시각으로 갱신</td><td>갱신하는 코드·트리거 없음</td><td>메시지 INSERT 시 부모 <code>updated_at</code>을 갱신하는 트리거 추가, 또는 컬럼 제거</td></tr>
+      <tr><td>2</td><td><code>messages.role</code> 허용값</td><td>3종 열거</td><td>앱 Pydantic <code>Literal</code>로만 강제</td><td><code>CHECK (role IN ('user','assistant','system'))</code> 추가</td></tr>
+      <tr><td>3</td><td><code>conversations.title</code> 기본값</td><td><code>'새로운 대화'</code></td><td>앱이 항상 값을 보내며 폴백은 <code>'새 대화'</code> / 표시는 <code>'대화 미지정'</code></td><td>문구 하나로 통일 (화면 설계서는 “새 대화”)</td></tr>
+      <tr><td>4</td><td><code>profiles.id</code> 기본값</td><td><code>gen_random_uuid()</code></td><td>트리거가 <code>auth.users.id</code>를 넣어 기본값 미사용</td><td>DDL에 <code>references auth.users(id) on delete cascade</code> 명시 여부 확인</td></tr>
+      <tr><td>5</td><td>인덱스</td><td>정의 없음</td><td>PK만</td><td>9장 권장 인덱스 적용</td></tr>
+      <tr><td>6</td><td>메시지 조회 범위</td><td>—</td><td>앞에서 20건 고정</td><td>페이지 파라미터 노출 (API 문서 6.4와 동일)</td></tr>
+      <tr><td>7</td><td>대시보드 접근 범위</td><td>—</td><td>로그인 사용자 전체가 전체 대화 제목 열람</td><td>관리자 역할 컬럼 또는 별도 권한 테이블 도입</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="ddl">부록. 참고 DDL</h2>
+  <p><span class="src doc">설계서</span> 배포된 DDL 원문이 저장소에 없어 <b>설계서 명세로부터 재구성</b>한 것이다. 실제 Supabase 프로젝트의 정의와 다를 수 있으며, 트리거·RLS 부분은 SQL 파일 원문과 같다.</p>
+  <pre><code>-- 사용자 프로필 (auth.users와 1:1, 트리거로 생성)
+create table if not exists profiles (
+    id          uuid primary key default gen_random_uuid(),
+    username    varchar(30) not null,
+    created_at  timestamptz not null default current_timestamp
+);
+
+-- 대화
+create table if not exists conversations (
+    id          uuid primary key default gen_random_uuid(),
+    user_id     uuid not null references profiles(id) on delete cascade,
+    title       varchar(100) default '새로운 대화',
+    created_at  timestamptz not null default current_timestamp,
+    updated_at  timestamptz not null default current_timestamp
+);
+
+-- 메시지
+create table if not exists messages (
+    id               uuid primary key default gen_random_uuid(),
+    conversation_id  uuid not null references conversations(id) on delete cascade,
+    role             varchar(20) not null,
+    content          text not null,
+    created_at       timestamptz not null default current_timestamp
+);
+
+-- 가입 시 프로필 자동 생성 (원문)
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+    insert into public.profiles (id, username)
+    values (new.id, split_part(new.email, '@', 1));
+    return new;
+end; $$;
+create trigger on_auth_user_created
+    after insert on auth.users for each row execute function public.handle_new_user();
+
+-- RLS (원문)
+alter table profiles enable row level security;
+alter table conversations enable row level security;
+alter table messages enable row level security;
+
+create policy "select own profile" on profiles for select using (auth.uid() = id);
+create policy "update own profile" on profiles for update using (auth.uid() = id);
+create policy "select own conversations" on conversations for select using (auth.uid() = user_id);
+create policy "insert own conversations" on conversations for insert with check (auth.uid() = user_id);
+create policy "update own conversations" on conversations for update using (auth.uid() = user_id);
+create policy "delete own conversations" on conversations for delete using (auth.uid() = user_id);
+create policy "select own messages" on messages for select using (
+    exists (select 1 from conversations c where c.id = messages.conversation_id and c.user_id = auth.uid()));
+create policy "insert own messages" on messages for insert with check (
+    exists (select 1 from conversations c where c.id = messages.conversation_id and c.user_id = auth.uid()));</code></pre>
+
+  <footer>AskHR 데이터베이스 설계서 · 2026-09-09 · 설계서(md) · <code>docs/db/01_create_table.sql</code> · 백엔드 소스를 기준으로 작성.</footer>
+</main>
+</div>
+</body>
+</html>

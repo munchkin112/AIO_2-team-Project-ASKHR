@@ -2,7 +2,7 @@
 
 # AskHR — 사내 규정 AI 챗봇
 
-**규정 이름을 몰라도, 내 상황을 말하면 답이 나온다.**
+**내부 규정을 몰라도, 얘기만 해도 알려줍니다.**
 
 사원이 자신의 상황을 자연어로 설명하면 사내 규정 문서를 근거로 이해하기 쉬운 답변을 주고,
 운영자는 대시보드에서 응답 지연시간과 토큰 사용량을 확인하는 사내 FAQ AI 챗봇입니다.
@@ -300,7 +300,7 @@ cd frontend && uv run python -m unittest discover -s tests -v
 |---|---|---|---|
 | 임익현 | 팀장 (PM) · 기획 | 화면 설계, 일정 관리, 팀 노션 관리 | [@munchkin112](https://github.com/munchkin112) |
 | 신영석 | 기획 · 발표 | 챗봇 프롬프트, 유저플로우, 시스템 아키텍처 | [@WithAndWithout0094](https://github.com/WithAndWithout0094) |
-| 이홍진 | 백엔드 | DB 설계, 챗봇, UI | [@poohoot-ai](https://github.com/poohoot-ai) |
+| 이홍진 | 풀스택 | DB 설계, 챗봇, UI | [@poohoot-ai](https://github.com/poohoot-ai) |
 | 강민우 | 백엔드 | DB 구현, 데이터, 로그 | [@akfxkfkd135-collab](https://github.com/akfxkfkd135-collab) |
 
 **Ground Rules** — 이틀 안에 시연 가능한 최소 기능부터 · 09:00 / 18:00 데일리 스크럼 · 30분 이상 막히면 공유 · 모든 작업에 담당자 · 마감 · 완료 기준 · 의견이 갈리면 시연 필수 여부 · 구현 시간 · 안정성 순으로 판단

@@ -13,7 +13,7 @@
 ![Redis](https://img.shields.io/badge/Cache%20%2F%20Log-Redis-DC382D?logo=redis&logoColor=white)
 ![Gemini](https://img.shields.io/badge/LLM-Gemini-4285F4?logo=googlegemini&logoColor=white)
 
-**[🚀 서비스 바로가기](https://2026aio2ask-hr-frontend-qmyw7a2qrnz7gfsvy5rrnc.streamlit.app/)** · **[📖 API 문서 (Swagger)](https://two026-aio2-ask-hr-backend.onrender.com/docs)**
+**[🚀 서비스 바로가기](https://2026aio2ask-hr-frontend-qmyw7a2qrnz7gfsvy5rrnc.streamlit.app/)** · **[📖 API 문서 (Swagger)](https://two026-aio2-ask-hr-backend.onrender.com/docs)** · **[📚 프로젝트 산출물](https://munchkin112.github.io/AIO_2-team-Project-ASKHR/)**
 
 AIO 2기 · 삼 팀 · 개발 2026.09.07 – 09.08 · 발표 2026.09.09
 

@@ -300,7 +300,7 @@ cd frontend && uv run python -m unittest discover -s tests -v
 |---|---|---|---|
 | 임익현 | 팀장 (PM) · 기획 | 화면 흐름, 상세 설계, GitHub Pages 산출물 및 팀 Notion 관리 | [@munchkin112](https://github.com/munchkin112) |
 | 신영석 | 기획 · 발표 | 챗봇 프롬프트, 유저플로우, 시스템 아키텍처 | [@WithAndWithout0094](https://github.com/WithAndWithout0094) |
-| 이홍진 | 풀스택 | DB 설계, 챗봇, UI | [@poohoot-ai](https://github.com/poohoot-ai) |
+| 이홍진 | 풀스택 | DB 설계, 대시보드 개발, 챗봇, UI | [@poohoot-ai](https://github.com/poohoot-ai) |
 | 강민우 | 백엔드 | DB 구현, 데이터, 로그 | [@akfxkfkd135-collab](https://github.com/akfxkfkd135-collab) |
 
 **Ground Rules** — 이틀 안에 시연 가능한 최소 기능부터 · 09:00 / 18:00 데일리 스크럼 · 30분 이상 막히면 공유 · 모든 작업에 담당자 · 마감 · 완료 기준 · 의견이 갈리면 시연 필수 여부 · 구현 시간 · 안정성 순으로 판단

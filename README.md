@@ -298,7 +298,7 @@ cd frontend && uv run python -m unittest discover -s tests -v
 
 | 이름 | 역할 | 담당 | GitHub |
 |---|---|---|---|
-| 임익현 | 팀장 (PM) · 기획 | 화면 설계, 일정 관리, 팀 노션 관리 | [@munchkin112](https://github.com/munchkin112) |
+| 임익현 | 팀장 (PM) · 기획 | 화면 흐름, 상세 설계, GitHub Pages 산출물 및 팀 Notion 관리 | [@munchkin112](https://github.com/munchkin112) |
 | 신영석 | 기획 · 발표 | 챗봇 프롬프트, 유저플로우, 시스템 아키텍처 | [@WithAndWithout0094](https://github.com/WithAndWithout0094) |
 | 이홍진 | 풀스택 | DB 설계, 챗봇, UI | [@poohoot-ai](https://github.com/poohoot-ai) |
 | 강민우 | 백엔드 | DB 구현, 데이터, 로그 | [@akfxkfkd135-collab](https://github.com/akfxkfkd135-collab) |

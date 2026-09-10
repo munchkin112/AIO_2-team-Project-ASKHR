@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AskHR API 설계 문서</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1f1b24; --muted:#6b6478; --line:#e6e1ec; --soft:#f7f5fa;
+    --brand:#4a1a5c; --brand-2:#7c3aed; --brand-soft:#efe7f7;
+    --get:#1a7f4b; --get-bg:#e6f5ec; --post:#1d5fbf; --post-bg:#e6eefb; --del:#b3261e; --del-bg:#fbe9e7;
+    --code-bg:#f3f0f7; --ok:#1a7f4b; --warn:#b26a00; --err:#b3261e;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:15px;line-height:1.6}
+  a{color:var(--brand-2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre{font-family:"Cascadia Code","JetBrains Mono",Consolas,"D2Coding",monospace;font-size:13px}
+  code{background:var(--code-bg);padding:1px 6px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;margin:8px 0 0}
+  pre code{background:none;padding:0}
+  h1,h2,h3,h4{line-height:1.3;margin:0}
+  h2{font-size:24px;color:var(--brand);padding-bottom:8px;border-bottom:2px solid var(--brand);margin:56px 0 20px}
+  h3{font-size:18px;margin:32px 0 12px;color:var(--brand)}
+  h4{font-size:14px;margin:18px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  p{margin:8px 0}
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--soft);font-weight:600;white-space:nowrap}
+  tbody tr:nth-child(even){background:#fbfafd}
+  td code{white-space:nowrap}
+  .layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;max-width:1400px;margin:0 auto}
+  nav{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--line);background:var(--soft);font-size:13.5px}
+  nav .brand{font-weight:800;color:var(--brand);font-size:16px;margin-bottom:14px}
+  nav ul{list-style:none;padding:0;margin:0}
+  nav li{margin:4px 0}
+  nav li.sub{padding-left:14px}
+  nav a{color:var(--fg)}
+  nav a:hover{color:var(--brand-2)}
+  main{padding:40px 48px 80px;min-width:0}
+  .hero{display:flex;align-items:flex-start;gap:20px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .hero .mark{width:56px;height:56px;border-radius:14px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:26px;flex:none}
+  .hero h1{font-size:30px;color:var(--brand)}
+  .hero .sub{color:var(--muted);margin-top:4px}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:18px 0 0}
+  .meta div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .meta b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .badge{display:inline-block;font-weight:700;font-size:12px;padding:2px 8px;border-radius:6px;letter-spacing:.03em;font-family:Consolas,monospace}
+  .GET{color:var(--get);background:var(--get-bg)} .POST{color:var(--post);background:var(--post-bg)} .DELETE{color:var(--del);background:var(--del-bg)}
+  .lock{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+  .lock.open{color:var(--ok);border-color:#bfe3cc}
+  .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .status{font-weight:700;font-family:Consolas,monospace}
+  .s2{color:var(--ok)} .s4{color:var(--warn)} .s5{color:var(--err)}
+  .endpoint{border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:18px 0 26px;break-inside:avoid}
+  .endpoint .head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:6px}
+  .endpoint .path{font-family:Consolas,monospace;font-size:16px;font-weight:700}
+  .endpoint .summary{color:var(--muted);width:100%;margin-top:2px}
+  .note{background:var(--brand-soft);border-left:4px solid var(--brand-2);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:14px}
+  .warn{background:#fff6e5;border-left:4px solid var(--warn)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .two > div{min-width:0}
+  .callout li{margin:3px 0}
+  .figure{margin:14px 0;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;background:#fff}
+  .figure svg{display:block;min-width:900px;max-width:100%}
+  .cap{font-size:13px;color:var(--muted);margin-top:6px}
+  .toc-top{font-size:12px;color:var(--muted)}
+  footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  @media (max-width:1000px){ .layout{grid-template-columns:1fr} nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)} main{padding:28px 20px} .two{grid-template-columns:1fr} }
+  @media print{
+    nav{display:none} .layout{display:block} main{padding:0} body{font-size:12px}
+    h2{break-before:page;margin-top:0} h2:first-of-type{break-before:auto}
+    .endpoint{break-inside:avoid;box-shadow:none} pre{white-space:pre-wrap;word-break:break-all}
+    a{color:inherit} .figure svg{min-width:0;width:100%}
+    @page{size:A4;margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">AskHR API</div>
+  <ul>
+    <li><a href="#overview">1. 개요</a></li>
+    <li class="sub"><a href="#auth-model">인증 방식</a></li>
+    <li class="sub"><a href="#conventions">공통 규칙</a></li>
+    <li><a href="#summary">2. 엔드포인트 요약</a></li>
+    <li><a href="#detail">3. 엔드포인트 상세</a></li>
+    <li class="sub"><a href="#g-auth">인증</a></li>
+    <li class="sub"><a href="#g-me">내정보</a></li>
+    <li class="sub"><a href="#g-conv">대화 · 채팅(SSE)</a></li>
+    <li class="sub"><a href="#g-analytics">대시보드</a></li>
+    <li class="sub"><a href="#g-system">시스템</a></li>
+    <li><a href="#errors">4. 오류 코드</a></li>
+    <li><a href="#schemas">5. 스키마 정의</a></li>
+    <li><a href="#appendix">6. 부록 · 처리 정책</a></li>
+  </ul>
+</nav>
+
+<main>
+  <div class="hero">
+    <div class="mark">H</div>
+    <div>
+      <h1>AskHR API 설계 문서</h1>
+      <div class="sub">사내 규정 AI 챗봇 · 백엔드 REST / SSE 인터페이스 명세</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><b>API 버전</b>0.1.0 (OpenAPI 3.1.0)</div>
+    <div><b>작성일</b>2026-09-09</div>
+    <div><b>Base URL</b><code>https://two026-aio2-ask-hr-backend.onrender.com</code></div>
+    <div><b>대화형 문서 (Swagger UI)</b><a href="https://two026-aio2-ask-hr-backend.onrender.com/docs">/docs</a> · <a href="https://two026-aio2-ask-hr-backend.onrender.com/openapi.json">/openapi.json</a></div>
+    <div><b>근거</b>배포 서버의 <code>openapi.json</code> + 백엔드 소스 검토 (라우터 · 의존성 · 스키마)</div>
+    <div><b>관련 문서</b>화면 설계서 (SCR / COM / ST ID 상호 참조)</div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="overview">1. 개요</h2>
+  <p>AskHR 백엔드는 FastAPI로 구현된 단일 서비스이며, 인증·데이터는 Supabase, 캐시·사용량 로그는 Redis, 답변 생성은 Google Gemini를 사용한다. 클라이언트(웹 프런트엔드)는 이 문서의 엔드포인트만 호출하며 Supabase·Redis·Gemini에 직접 접근하지 않는다.</p>
+
+  <table>
+    <thead><tr><th>구성 요소</th><th>역할</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>FastAPI</td><td>REST · SSE API 서버</td><td>제목 <code>AskHR</code>, 버전 <code>0.1.0</code></td></tr>
+      <tr><td>Supabase Auth</td><td>회원가입 · 로그인 · JWT 발급/검증</td><td>이메일 + 비밀번호 방식</td></tr>
+      <tr><td>Supabase Postgres</td><td><code>conversations</code>, <code>messages</code>, <code>profiles</code> 테이블</td><td>RLS(행 수준 보안)로 소유자 검사</td></tr>
+      <tr><td>Redis</td><td>세션 캐시(5분), 메시지 목록 캐시(5분), 사용량 로그(대화당 최근 50건)</td><td>사용량 로그는 운영 기록이며 서비스 데이터가 아님</td></tr>
+      <tr><td>Google Gemini</td><td>답변 생성 (<code>gemini-3.5-flash-lite</code>, 스트리밍)</td><td>시스템 프롬프트에 규정 MD 본문을 삽입 (키워드 기반 선택)</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="auth-model">1.1 인증 방식</h3>
+  <ul class="callout">
+    <li>인증 방식은 <b>HTTP Bearer</b>이다. <code>POST /auth/login</code> 또는 <code>POST /auth/signup</code> 응답의 <code>access_token</code>을 이후 모든 요청의 헤더에 담는다.</li>
+    <li>헤더 형식: <code>Authorization: Bearer &lt;access_token&gt;</code></li>
+    <li>토큰은 Supabase에 검증을 위임하며, 검증 결과는 토큰 해시를 키로 Redis에 <b>300초</b> 캐시된다. 만료·위조 토큰은 <span class="status s4">401</span> <code>유효하지 않은 토큰입니다</code>로 응답한다.</li>
+    <li>보호된 엔드포인트는 아래 요약표에서 🔒로 표시한다. <code>/auth/*</code>, <code>/health</code>만 인증 없이 호출할 수 있다.</li>
+    <li>대화 소유권은 서버가 직접 비교하지 않고 RLS가 적용된 조회 결과로 판단한다. <b>존재하지 않는 대화와 타인의 대화는 구분 없이 동일하게 404로 응답</b>한다 (대화 존재 여부 노출 방지).</li>
+  </ul>
+
+  <h3 id="conventions">1.2 공통 규칙</h3>
+  <table>
+    <thead><tr><th>항목</th><th>규칙</th></tr></thead>
+    <tbody>
+      <tr><td>요청 · 응답 형식</td><td><code>Content-Type: application/json</code>. 예외: <code>POST /conversations/{id}/chat</code> 응답은 <code>text/event-stream</code>(SSE)</td></tr>
+      <tr><td>식별자</td><td>모든 ID는 UUID v4 문자열</td></tr>
+      <tr><td>날짜 · 시각</td><td>ISO 8601. 서버는 UTC로 저장·반환한다. 대시보드 조회 파라미터 <code>start</code>/<code>end</code>는 <b>타임존이 포함된 값</b>이어야 한다 (예: <code>2026-09-01T00:00:00+09:00</code>). 화면 표시는 클라이언트가 KST로 변환한다.</td></tr>
+      <tr><td>오류 응답 본문</td><td>모든 오류는 <code>{"detail": ...}</code> 형태. 422는 <code>detail</code>이 <code>ValidationError[]</code> 배열, 그 외는 문자열 메시지</td></tr>
+      <tr><td>페이지네이션</td><td>대시보드 목록 API만 <code>limit</code>(1~200, 기본 50) · <code>offset</code>(0 이상) 방식</td></tr>
+      <tr><td>정렬</td><td>대화 목록: 생성일 내림차순 / 메시지 목록: 생성일 오름차순 / 사용량 로그: 요청 시각 내림차순 / 대화별 통계: 응답 수 내림차순</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="summary">2. 엔드포인트 요약</h2>
+  <p>총 13개. 🔒 = Bearer 토큰 필요.</p>
+
+  <table>
+    <thead><tr><th>그룹</th><th>Method</th><th>Endpoint</th><th>기능</th><th>인증</th><th>성공</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2">인증</td><td><span class="badge POST">POST</span></td><td><a href="#ep-signup"><code>/auth/signup</code></a></td><td>회원가입</td><td>—</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge POST">POST</span></td><td><a href="#ep-login"><code>/auth/login</code></a></td><td>로그인</td><td>—</td><td class="status s2">200</td></tr>
+      <tr><td rowspan="5">내정보</td><td><span class="badge GET">GET</span></td><td><a href="#ep-me"><code>/me</code></a></td><td>내 계정 정보 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge GET">GET</span></td><td><a href="#ep-me-conv-list"><code>/me/conversations</code></a></td><td>내 대화 목록 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge POST">POST</span></td><td><a href="#ep-me-conv-create"><code>/me/conversations</code></a></td><td>내 대화 생성</td><td>🔒</td><td class="status s2">201</td></tr>
+      <tr><td><span class="badge DELETE">DELETE</span></td><td><a href="#ep-me-conv-delete"><code>/me/conversations/{conversation_id}</code></a></td><td>내 대화 삭제</td><td>🔒</td><td class="status s2">204</td></tr>
+      <tr><td><span class="badge GET">GET</span></td><td><a href="#ep-me-profile"><code>/me/profile</code></a></td><td>내 프로필 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td rowspan="2">대화</td><td><span class="badge GET">GET</span></td><td><a href="#ep-messages"><code>/conversations/{conversation_id}/messages</code></a></td><td>대화 메시지 목록 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge POST">POST</span></td><td><a href="#ep-chat"><code>/conversations/{conversation_id}/chat</code></a></td><td>채팅 응답 생성 (SSE 스트리밍)</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td rowspan="3">대시보드</td><td><span class="badge GET">GET</span></td><td><a href="#ep-an-summary"><code>/analytics/summary</code></a></td><td>사용량 통계 요약 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge GET">GET</span></td><td><a href="#ep-an-logs"><code>/analytics/logs</code></a></td><td>사용량 로그 목록 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td><span class="badge GET">GET</span></td><td><a href="#ep-an-conv"><code>/analytics/conversations</code></a></td><td>대화별 사용량 통계 조회</td><td>🔒</td><td class="status s2">200</td></tr>
+      <tr><td>시스템</td><td><span class="badge GET">GET</span></td><td><a href="#ep-health"><code>/health</code></a></td><td>백엔드 상태 확인</td><td>—</td><td class="status s2">200</td></tr>
+    </tbody>
+  </table>
+
+  <h3>화면 ↔ API 매핑</h3>
+  <table>
+    <thead><tr><th>화면 (화면 설계서)</th><th>호출 API</th></tr></thead>
+    <tbody>
+      <tr><td>SCR-001 로그인 / SCR-001-M01 회원가입 팝업</td><td><code>POST /auth/login</code>, <code>POST /auth/signup</code></td></tr>
+      <tr><td>COM-001 사이드바 (대화 목록)</td><td><code>GET /me/conversations</code></td></tr>
+      <tr><td>SCR-002 홈 → 새 대화 시작 / SCR-003 새 대화</td><td><code>POST /me/conversations</code></td></tr>
+      <tr><td>SCR-004 채팅 화면</td><td><code>GET /conversations/{id}/messages</code>, <code>POST /conversations/{id}/chat</code></td></tr>
+      <tr><td>SCR-005 활동 개요</td><td><code>GET /analytics/summary</code>, <code>GET /analytics/logs</code> (최근 5건 추이)</td></tr>
+      <tr><td>SCR-006 사용 로그</td><td><code>GET /analytics/logs</code></td></tr>
+      <tr><td>SCR-007 대화별 통계</td><td><code>GET /analytics/conversations</code></td></tr>
+      <tr><td>배포 상태 점검</td><td><code>GET /health</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 id="detail">3. 엔드포인트 상세</h2>
+
+  <!-- ---------------- 인증 ---------------- -->
+  <h3 id="g-auth">3.1 인증</h3>
+
+  <div class="endpoint" id="ep-signup">
+    <div class="head"><span class="badge POST">POST</span><span class="path">/auth/signup</span><span class="lock open">인증 불필요</span>
+      <div class="summary">회원가입 — Supabase Auth에 사용자 1건을 등록하고 토큰을 돌려준다.</div></div>
+    <h4>요청 본문 <span class="pill">SignupRequest</span></h4>
+    <table><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>email</code></td><td>string</td><td>필수</td><td>계정 식별자로 사용할 이메일</td></tr>
+      <tr><td><code>password</code></td><td>string</td><td>필수</td><td>비밀번호. 길이·복잡도 정책은 Supabase 프로젝트 설정을 따른다</td></tr>
+    </tbody></table>
+    <div class="two">
+      <div><h4>요청 예시</h4><pre><code>POST /auth/signup
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "********"
+}</code></pre></div>
+      <div><h4>응답 예시 <span class="status s2">200</span> <span class="pill">TokenResponse</span></h4><pre><code>{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "email": "user@example.com"
+}</code></pre></div>
+    </div>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>가입 성공</td><td><code>TokenResponse</code></td></tr>
+      <tr><td class="status s4">400</td><td>이미 존재하는 이메일, 정책 미달 비밀번호 등 Supabase 가입 실패</td><td><code>{"detail": "&lt;Supabase 오류 메시지&gt;"}</code></td></tr>
+      <tr><td class="status s4">422</td><td>필드 누락 · 타입 오류</td><td><code>HTTPValidationError</code></td></tr>
+    </tbody></table>
+    <div class="note">Supabase 프로젝트에서 <b>이메일 확인(Confirm email)이 켜져 있으면</b> 가입 직후 세션이 만들어지지 않아 <code>access_token</code>이 <code>null</code>로 온다. 이 경우 클라이언트는 자동 로그인 대신 로그인 화면(SCR-001-E09 “가입 후 자동 로그인 실패” 안내)으로 유도한다.</div>
+  </div>
+
+  <div class="endpoint" id="ep-login">
+    <div class="head"><span class="badge POST">POST</span><span class="path">/auth/login</span><span class="lock open">인증 불필요</span>
+      <div class="summary">로그인 — 이메일·비밀번호로 세션을 만들고 access token을 돌려준다.</div></div>
+    <h4>요청 본문 <span class="pill">LoginRequest</span></h4>
+    <table><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>email</code></td><td>string</td><td>필수</td><td>가입한 이메일</td></tr>
+      <tr><td><code>password</code></td><td>string</td><td>필수</td><td>비밀번호</td></tr>
+    </tbody></table>
+    <div class="two">
+      <div><h4>요청 예시</h4><pre><code>POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "********"
+}</code></pre></div>
+      <div><h4>응답 예시 <span class="status s2">200</span> <span class="pill">TokenResponse</span></h4><pre><code>{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "email": "user@example.com"
+}</code></pre></div>
+    </div>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>인증 성공</td><td><code>TokenResponse</code></td></tr>
+      <tr><td class="status s4">401</td><td>이메일 또는 비밀번호 불일치, 미확인 계정</td><td><code>{"detail": "&lt;Supabase 오류 메시지&gt;"}</code></td></tr>
+      <tr><td class="status s4">422</td><td>필드 누락 · 타입 오류</td><td><code>HTTPValidationError</code></td></tr>
+    </tbody></table>
+    <p class="cap">클라이언트는 성공 시 <code>access_token</code>과 <code>email</code>을 세션에 저장한다 (화면 설계서 SCR-001 “입력 검증 및 상태”).</p>
+  </div>
+
+  <!-- ---------------- 내정보 ---------------- -->
+  <h3 id="g-me">3.2 내정보</h3>
+
+  <div class="endpoint" id="ep-me">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/me</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">내 계정 정보 조회 — 토큰이 가리키는 사용자의 식별 정보를 돌려준다. 토큰 유효성 확인 용도로도 쓴다.</div></div>
+    <div class="two">
+      <div><h4>요청 예시</h4><pre><code>GET /me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...</code></pre></div>
+      <div><h4>응답 예시 <span class="status s2">200</span></h4><pre><code>{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "email": "user@example.com"
+}</code></pre></div>
+    </div>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td><code>{ id: string(uuid), email: string }</code></td></tr>
+      <tr><td class="status s4">401</td><td>토큰 없음 · 만료 · 위조</td></tr>
+    </tbody></table>
+    <p class="cap">OpenAPI에는 응답 스키마가 비어 있으나 실제 응답은 위 두 필드로 고정이다.</p>
+  </div>
+
+  <div class="endpoint" id="ep-me-conv-list">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/me/conversations</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">내 대화 목록 조회 — 로그인 사용자가 소유한 대화를 최신 생성순으로 돌려준다. 사이드바(COM-001-E07)와 첫 진입 시 “대화 존재 여부” 분기에 사용한다.</div></div>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">ConversationOut[]</span></h4>
+    <pre><code>[
+  {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "user_id": "9b2e1c4a-1111-4c2b-8d3e-0a1b2c3d4e5f",
+    "title": "복리후생 제도를 알려주세요.",
+    "created_at": "2026-09-09T01:31:20.512Z"
+  }
+]</code></pre>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>0건이면 빈 배열 <code>[]</code> → 화면은 SCR-002 홈·환영 화면으로 분기</td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="endpoint" id="ep-me-conv-create">
+    <div class="head"><span class="badge POST">POST</span><span class="path">/me/conversations</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">내 대화 생성 — 새 대화를 만든다. 홈의 “새 대화 시작”(SCR-002-E05)과 사이드바 “새 대화”(COM-001-E03)에서 호출한다.</div></div>
+    <h4>요청 본문 <span class="pill">MyConversationCreate</span></h4>
+    <table><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>제약</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>title</code></td><td>string</td><td>필수</td><td>1 ~ 100자</td><td>초기 제목. 클라이언트는 “새 대화”를 보내며, 첫 사용자 메시지 전송 시 서버가 자동 갱신한다</td></tr>
+    </tbody></table>
+    <div class="two">
+      <div><h4>요청 예시</h4><pre><code>POST /me/conversations
+Authorization: Bearer ...
+Content-Type: application/json
+
+{ "title": "새 대화" }</code></pre></div>
+      <div><h4>응답 예시 <span class="status s2">201</span> <span class="pill">ConversationOut</span></h4><pre><code>{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "user_id": "9b2e1c4a-1111-4c2b-8d3e-0a1b2c3d4e5f",
+  "title": "새 대화",
+  "created_at": "2026-09-09T01:30:02.104Z"
+}</code></pre></div>
+    </div>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th></tr></thead><tbody>
+      <tr><td class="status s2">201</td><td>생성 성공</td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td></tr>
+      <tr><td class="status s4">422</td><td><code>title</code> 누락 또는 길이 위반</td></tr>
+    </tbody></table>
+    <div class="note">중복 생성 방지는 <b>클라이언트 규칙</b>이다. 현재 대화가 비어 있으면 API를 다시 호출하지 않고 그 대화를 재사용한다 (SCR-003 “데이터 및 상태 규칙”). 서버는 호출할 때마다 새 대화를 만든다.</div>
+  </div>
+
+  <div class="endpoint" id="ep-me-conv-delete">
+    <div class="head"><span class="badge DELETE">DELETE</span><span class="path">/me/conversations/{conversation_id}</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">내 대화 삭제 — 내가 소유한 대화를 삭제한다.</div></div>
+    <h4>경로 파라미터</h4>
+    <table><thead><tr><th>이름</th><th>타입</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>conversation_id</code></td><td>string (uuid)</td><td>삭제할 대화 ID</td></tr>
+    </tbody></table>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">204</td><td>삭제 성공</td><td>없음</td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td><td><code>{"detail": "유효하지 않은 토큰입니다"}</code></td></tr>
+      <tr><td class="status s4">404</td><td>존재하지 않거나 내 소유가 아닌 대화 (RLS로 0건 삭제)</td><td><code>{"detail": "conversation not found"}</code></td></tr>
+      <tr><td class="status s4">422</td><td>UUID 형식 오류</td><td><code>HTTPValidationError</code></td></tr>
+    </tbody></table>
+    <div class="note warn">대화를 삭제해도 Redis의 사용량 로그(<code>usage_log:{id}</code>)는 남는다. 대시보드에서는 해당 로그가 “삭제되었거나 정보가 없는 대화” 제목으로 집계된다.</div>
+  </div>
+
+  <div class="endpoint" id="ep-me-profile">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/me/profile</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">내 프로필 조회 — <code>profiles</code> 테이블의 내 행을 돌려준다.</div></div>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">ProfileOut</span></h4>
+    <pre><code>{
+  "id": "9b2e1c4a-1111-4c2b-8d3e-0a1b2c3d4e5f",
+  "username": "hong",
+  "created_at": "2026-08-20T09:12:44.000Z"
+}</code></pre>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>프로필 존재</td><td><code>ProfileOut</code></td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td><td></td></tr>
+      <tr><td class="status s4">404</td><td>프로필 행이 없음</td><td><code>{"detail": "프로필을 찾을 수 없습니다"}</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- ---------------- 대화 ---------------- -->
+  <h3 id="g-conv">3.3 대화 · 채팅</h3>
+
+  <div class="endpoint" id="ep-messages">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/conversations/{conversation_id}/messages</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">대화 메시지 목록 조회 — 대화의 메시지를 생성순(오래된 것부터)으로 돌려준다. 채팅 화면(SCR-004) 진입과 답변 완료 후 재조회에 사용한다.</div></div>
+    <h4>경로 파라미터</h4>
+    <table><thead><tr><th>이름</th><th>타입</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>conversation_id</code></td><td>string (uuid)</td><td>내가 소유한 대화 ID</td></tr>
+    </tbody></table>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">MessageOut[]</span></h4>
+    <pre><code>[
+  {
+    "id": "0c9d3a7e-2222-4a1f-9e7b-1f2e3d4c5b6a",
+    "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "role": "user",
+    "content": "복리후생 제도를 알려주세요.",
+    "created_at": "2026-09-09T01:31:20.512Z"
+  },
+  {
+    "id": "5e1f2a3b-3333-4b2c-8f9a-2a3b4c5d6e7f",
+    "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "role": "assistant",
+    "content": "복리후생 제도로는 복지포인트, 건강검진, ... [복리후생규정 > 복지포인트]",
+    "created_at": "2026-09-09T01:31:26.801Z"
+  }
+]</code></pre>
+    <h4>필드 규칙</h4>
+    <table><thead><tr><th>필드</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>role</code></td><td><code>user</code> 사용자 질문 · <code>assistant</code> AI 답변 · <code>system</code> 맥락 초기화 지점 (화면 설계서 SCR-004-E06 “맥락 구분선”). 클라이언트는 <code>system</code>을 말풍선이 아닌 구분선으로 렌더링한다</td></tr>
+      <tr><td><code>content</code></td><td>본문. AI 답변의 마지막 줄에는 근거 표기 <code>[규정명 &gt; 항목명]</code>이 포함된다 (SCR-004-E05 근거·출처)</td></tr>
+    </tbody></table>
+    <h4>응답 코드</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>조회 성공 (0건이면 <code>[]</code>)</td><td><code>MessageOut[]</code></td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td><td></td></tr>
+      <tr><td class="status s4">404</td><td>존재하지 않거나 내 소유가 아닌 대화</td><td><code>{"detail": "conversation not found"}</code></td></tr>
+      <tr><td class="status s4">422</td><td>UUID 형식 오류</td><td><code>HTTPValidationError</code></td></tr>
+    </tbody></table>
+    <div class="note warn">현재 구현은 페이지 파라미터 없이 <b>앞에서부터 최대 20건</b>을 돌려준다 (Redis에 5분 캐시, 메시지 저장 시 캐시 무효화). 20건을 넘는 긴 대화를 전부 표시하려면 <code>limit</code>/<code>offset</code> 노출이 필요하며 후속 과제로 둔다.</div>
+  </div>
+
+  <div class="endpoint" id="ep-chat">
+    <div class="head"><span class="badge POST">POST</span><span class="path">/conversations/{conversation_id}/chat</span><span class="lock">🔒 Bearer</span><span class="pill">SSE 스트리밍</span>
+      <div class="summary">채팅 응답 생성 — 사용자 질문을 저장하고, 관련 규정 문서를 골라 Gemini에 보낸 뒤, 답변을 <code>text/event-stream</code>으로 흘려보낸다. 완료 시 답변을 저장하고 사용량을 기록한다.</div></div>
+
+    <h4>경로 파라미터</h4>
+    <table><thead><tr><th>이름</th><th>타입</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>conversation_id</code></td><td>string (uuid)</td><td>내가 소유한 대화 ID</td></tr>
+    </tbody></table>
+
+    <h4>요청 본문 <span class="pill">ChatRequest</span></h4>
+    <table><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>content</code></td><td>string</td><td>필수</td><td>사용자 질문. 클라이언트는 빈 문자열을 보내지 않는다 (SCR-003-E08 / SCR-004-E07 규칙)</td></tr>
+      <tr><td><code>tone</code></td><td>string | null</td><td>선택</td><td>답변 말투 선택값. <b>예약 필드</b> — 현재 서버는 값을 받기만 하고 프롬프트에 반영하지 않는다</td></tr>
+      <tr><td><code>length</code></td><td>string | null</td><td>선택</td><td>답변 길이 선택값. <b>예약 필드</b> — 위와 동일</td></tr>
+    </tbody></table>
+
+    <h4>요청 예시</h4>
+    <pre><code>POST /conversations/3fa85f64-5717-4562-b3fc-2c963f66afa6/chat
+Authorization: Bearer ...
+Content-Type: application/json
+Accept: text/event-stream
+
+{ "content": "복리후생 제도를 알려주세요." }</code></pre>
+
+    <h4>응답 <span class="status s2">200</span> <code>Content-Type: text/event-stream</code></h4>
+    <p>각 이벤트는 <code>data: &lt;JSON&gt;</code> 한 줄과 빈 줄로 구성된다. 이벤트 종류는 JSON의 키로 구분한다.</p>
+    <table><thead><tr><th>이벤트</th><th>페이로드</th><th>발생 시점 · 처리</th></tr></thead><tbody>
+      <tr><td><b>text</b></td><td><code>{"text": "&lt;조각&gt;"}</code></td><td>모델이 생성한 텍스트 조각. 도착한 순서대로 이어 붙여 표시한다 (SCR-004-E04 스트리밍 상태). 조각 안의 줄바꿈은 JSON으로 이스케이프되어 있으므로 파싱 후 그대로 붙인다</td></tr>
+      <tr><td><b>done</b></td><td><code>{"done": true, "message_id": "&lt;uuid&gt;"}</code></td><td>정상 종료. 답변이 <code>messages</code>에 저장되고 사용량 로그가 기록된 뒤 마지막으로 1회 전송. 클라이언트는 이 이벤트 후 <code>GET /conversations/{id}/messages</code>와 <code>GET /me/conversations</code>를 재조회해 저장본과 갱신된 제목을 반영한다</td></tr>
+      <tr><td><b>error</b></td><td><code>{"error": "&lt;메시지&gt;"}</code></td><td>스트림 시작 후 발생한 실패. 이미 200으로 응답이 열려 있어 HTTP 상태를 바꿀 수 없으므로 이벤트로 통지한다. 이 이벤트 뒤에는 <code>done</code>이 오지 않으며 답변은 저장되지 않는다 (사용자 질문은 이미 저장됨). 대표 원인: Gemini 일일 한도 초과(429), 모델 오류, 빈 응답</td></tr>
+    </tbody></table>
+
+    <h4>응답 예시 (스트림)</h4>
+    <pre><code>data: {"text": "복리후생 제도로는 복지포인트, 건강검진, "}
+
+data: {"text": "자기계발비, 도서구입비, 식대 및 야근 식대, "}
+
+data: {"text": "경조휴가 및 경조사비, 심리상담 지원이 있습니다.\n\n[복리후생규정 > 복지포인트] [복리후생규정 > 건강검진]"}
+
+data: {"done": true, "message_id": "5e1f2a3b-3333-4b2c-8f9a-2a3b4c5d6e7f"}</code></pre>
+    <pre><code>// 한도 초과 등 실패 시
+data: {"error": "ClientError: 429 RESOURCE_EXHAUSTED ..."}</code></pre>
+
+    <h4>HTTP 응답 코드 (스트림 시작 전)</h4>
+    <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+      <tr><td class="status s2">200</td><td>스트림 시작. 이후 성공/실패는 SSE 이벤트로 구분</td><td><code>text/event-stream</code></td></tr>
+      <tr><td class="status s4">401</td><td>인증 실패</td><td><code>{"detail": "유효하지 않은 토큰입니다"}</code></td></tr>
+      <tr><td class="status s4">404</td><td>존재하지 않거나 내 소유가 아닌 대화</td><td><code>{"detail": "conversation not found"}</code></td></tr>
+      <tr><td class="status s4">422</td><td><code>content</code> 누락, UUID 형식 오류</td><td><code>HTTPValidationError</code></td></tr>
+      <tr><td class="status s5">503</td><td>선택된 규정 MD 파일을 읽을 수 없음 (누락 · UTF-8 아님 · 빈 파일). 사용자 메시지는 저장되지 않는다</td><td><code>{"detail": "선택한 규정 파일을 읽을 수 없습니다. ..."}</code></td></tr>
+    </tbody></table>
+
+    <h4>서버 처리 순서</h4>
+    <ol>
+      <li>토큰 검증 후 대화 소유 여부 확인 (실패 시 401 / 404).</li>
+      <li>대화 제목 조회. 이력 구성: 마지막 <code>system</code> 메시지 이후만 남기고, <code>user</code>/<code>assistant</code>만 골라 최근 <b>20개</b>로 제한.</li>
+      <li>질문 키워드로 규정 MD 파일 선택 (부록 6.1). 새 키워드가 없고 후속 질문 표현이면 직전 사용자 질문의 주제를 잇는다. 파일 읽기 실패 시 503.</li>
+      <li>사용자 메시지를 먼저 저장 → <b>첫 사용자 메시지라면 대화 제목을 본문 앞 50자로 자동 갱신</b> (SCR-002-E06 안내 문구의 근거). 메시지 캐시 무효화.</li>
+      <li>시스템 프롬프트 + 이력 + 질문으로 Gemini 스트리밍 호출. 조각마다 <code>text</code> 이벤트 전송.</li>
+      <li>정상 종료 시 전체 답변을 <code>assistant</code> 메시지로 1회 저장, Redis <code>usage_log:{conversation_id}</code>에 지연시간·토큰 기록(최근 50건 유지), <code>done</code> 이벤트 전송.</li>
+    </ol>
+
+    <h4>시퀀스 다이어그램</h4>
+    <div class="figure">
+<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, 'Malgun Gothic', sans-serif" font-size="12">
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4a1a5c"/></marker>
+    <marker id="ahd" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7c3aed"/></marker>
+  </defs>
+  <!-- participants -->
+  <g font-weight="700" fill="#fff" text-anchor="middle">
+    <rect x="30" y="16" width="120" height="34" rx="8" fill="#4a1a5c"/><text x="90" y="38">클라이언트</text>
+    <rect x="215" y="16" width="120" height="34" rx="8" fill="#4a1a5c"/><text x="275" y="38">API (FastAPI)</text>
+    <rect x="400" y="16" width="120" height="34" rx="8" fill="#4a1a5c"/><text x="460" y="38">Supabase</text>
+    <rect x="570" y="16" width="100" height="34" rx="8" fill="#4a1a5c"/><text x="620" y="38">Redis</text>
+    <rect x="715" y="16" width="110" height="34" rx="8" fill="#4a1a5c"/><text x="770" y="38">규정 MD 파일</text>
+    <rect x="870" y="16" width="100" height="34" rx="8" fill="#4a1a5c"/><text x="920" y="38">Gemini</text>
+  </g>
+  <!-- lifelines -->
+  <g stroke="#cfc6da" stroke-dasharray="4 4">
+    <line x1="90" y1="50" x2="90" y2="540"/><line x1="275" y1="50" x2="275" y2="540"/><line x1="460" y1="50" x2="460" y2="540"/>
+    <line x1="620" y1="50" x2="620" y2="540"/><line x1="770" y1="50" x2="770" y2="540"/><line x1="920" y1="50" x2="920" y2="540"/>
+  </g>
+  <!-- messages -->
+  <g stroke="#4a1a5c" stroke-width="1.6" marker-end="url(#ah)" fill="none">
+    <line x1="90" y1="80" x2="273" y2="80"/>
+    <line x1="275" y1="112" x2="618" y2="112"/>
+    <line x1="275" y1="144" x2="458" y2="144"/>
+    <line x1="275" y1="176" x2="618" y2="176"/>
+    <line x1="275" y1="208" x2="768" y2="208"/>
+    <line x1="275" y1="240" x2="458" y2="240"/>
+    <line x1="275" y1="272" x2="918" y2="272"/>
+    <line x1="275" y1="424" x2="458" y2="424"/>
+    <line x1="275" y1="456" x2="618" y2="456"/>
+  </g>
+  <g stroke="#7c3aed" stroke-width="1.6" marker-end="url(#ahd)" fill="none" stroke-dasharray="6 3">
+    <line x1="920" y1="320" x2="277" y2="320"/>
+    <line x1="275" y1="352" x2="92" y2="352"/>
+    <line x1="920" y1="384" x2="277" y2="384"/>
+    <line x1="275" y1="488" x2="92" y2="488"/>
+  </g>
+  <g fill="#1f1b24">
+    <text x="100" y="74">① POST /conversations/{id}/chat  {content}</text>
+    <text x="285" y="106">② 세션 캐시 조회 (session:sha256)  miss → Supabase 검증 후 300s 캐시</text>
+    <text x="285" y="138">③ 대화 소유 확인(RLS) · 제목 조회</text>
+    <text x="285" y="170">④ 메시지 이력 캐시 조회 → system 이후 · 최근 20개로 축약</text>
+    <text x="285" y="202">⑤ 질문 키워드로 규정 파일 선택 · 본문 읽기 (실패 시 503)</text>
+    <text x="285" y="234">⑥ 사용자 메시지 저장 · 첫 메시지면 제목 자동 갱신 · 캐시 무효화</text>
+    <text x="285" y="266">⑦ generate_content_stream (system_instruction + 이력 + 질문)</text>
+    <text x="285" y="314" fill="#5b3a80">⑧ 텍스트 조각 (반복)</text>
+    <text x="100" y="346" fill="#5b3a80">⑨ data: {"text": "..."}  (조각마다 전달)</text>
+    <text x="285" y="378" fill="#5b3a80">⑩ 스트림 종료 + usage_metadata</text>
+    <text x="285" y="418">⑪ assistant 메시지 1회 저장</text>
+    <text x="285" y="450">⑫ usage_log:{id} 에 latency · tokens LPUSH, 50건 유지</text>
+    <text x="100" y="482" fill="#5b3a80">⑬ data: {"done": true, "message_id"}</text>
+  </g>
+  <rect x="60" y="298" width="900" height="66" rx="8" fill="none" stroke="#7c3aed" stroke-dasharray="3 3"/>
+  <text x="70" y="294" fill="#7c3aed" font-size="11" font-weight="700">loop · 조각 수신마다</text>
+  <rect x="60" y="506" width="900" height="30" rx="8" fill="#fff6e5" stroke="#b26a00"/>
+  <text x="70" y="525" fill="#7a4a00" font-size="11">⑦~⑩ 중 예외(한도 초과 429, 모델 오류, 빈 응답) 발생 시 → data: {"error": "..."} 전송 후 종료. ⑪~⑬ 수행 안 함, HTTP 상태는 200 유지</text>
+</svg>
+      <div class="cap">실선: 요청 / 점선(보라): 응답·스트림. Supabase 호출은 RLS가 적용된 클라이언트(소유 확인)와 서버 전용 클라이언트(저장·제목 갱신)를 구분해 사용한다.</div>
+    </div>
+  </div>
+
+  <!-- ---------------- 대시보드 ---------------- -->
+  <h3 id="g-analytics">3.4 대시보드</h3>
+  <p>세 엔드포인트는 같은 데이터 로딩 규칙을 공유한다. 데이터 출처는 Redis 사용량 로그이며 <b>모든 사용자의 로그를 대상으로</b> 집계한다 (MVP에서는 로그인 사용자 누구나 조회 가능 — 화면 설계서 7. 권한 및 데이터 기준).</p>
+
+  <h4>공통 쿼리 파라미터</h4>
+  <table><thead><tr><th>이름</th><th>타입</th><th>기본값</th><th>설명</th></tr></thead><tbody>
+    <tr><td><code>start</code></td><td>string (date-time, 타임존 필수)</td><td><code>end - 30일</code></td><td>조회 시작 시각 (포함)</td></tr>
+    <tr><td><code>end</code></td><td>string (date-time, 타임존 필수)</td><td>현재 시각(UTC)</td><td>조회 종료 시각 (미포함)</td></tr>
+    <tr><td><code>conversation_id</code></td><td>string (uuid)</td><td>없음</td><td>지정 시 해당 대화의 로그만 집계. 대화도 로그도 없으면 404</td></tr>
+    <tr><td><code>limit</code></td><td>integer 1~200</td><td>50</td><td>목록 API(<code>/logs</code>, <code>/conversations</code>)에만 적용</td></tr>
+    <tr><td><code>offset</code></td><td>integer ≥ 0</td><td>0</td><td>목록 API에만 적용. 페이지 N의 offset = <code>(N-1) × limit</code></td></tr>
+  </tbody></table>
+
+  <h4>공통 응답 코드</h4>
+  <table><thead><tr><th>코드</th><th>조건</th><th>본문</th></tr></thead><tbody>
+    <tr><td class="status s4">401</td><td>인증 실패</td><td><code>{"detail": "유효하지 않은 토큰입니다"}</code></td></tr>
+    <tr><td class="status s4">404</td><td><code>conversation_id</code>를 지정했으나 대화·로그가 모두 없음</td><td><code>{"detail": "conversation not found"}</code></td></tr>
+    <tr><td class="status s4">422</td><td><code>start ≥ end</code>, 기간 366일 초과, 타임존 없는 시각, 범위 밖 <code>limit</code>/<code>offset</code></td><td><code>{"detail": "start &lt; end이며 조회 기간은 최대 366일이어야 합니다"}</code> 또는 <code>HTTPValidationError</code></td></tr>
+    <tr><td class="status s5">503</td><td>Redis 연결 실패</td><td><code>{"detail": "사용량 로그 저장소에 연결할 수 없습니다"}</code></td></tr>
+  </tbody></table>
+
+  <h4>공통 필드 <span class="pill">Coverage</span> — 집계 범위 설명</h4>
+  <table><thead><tr><th>필드</th><th>값</th><th>의미</th></tr></thead><tbody>
+    <tr><td><code>source</code></td><td><code>"redis_usage_log"</code></td><td>데이터 출처</td></tr>
+    <tr><td><code>scope</code></td><td><code>"all_users"</code></td><td>전체 사용자 대상</td></tr>
+    <tr><td><code>max_logs_per_conversation</code></td><td><code>50</code></td><td>대화당 보관되는 최근 로그 수</td></tr>
+    <tr><td><code>complete_history</code></td><td><code>false</code></td><td>전체 누적 이력이 아님 (SCR-005-E09 주의 문구의 근거)</td></tr>
+    <tr><td><code>timestamp_semantics</code></td><td><code>"logged_at"</code></td><td>기록 시각은 응답 저장 시점</td></tr>
+    <tr><td><code>successful_responses_only</code></td><td><code>true</code></td><td>스트림이 정상 완료된 응답만 포함</td></tr>
+    <tr><td><code>skipped_invalid_logs</code></td><td>integer</td><td>형식 오류로 집계에서 제외된 로그 수 (ST-010)</td></tr>
+  </tbody></table>
+
+  <div class="endpoint" id="ep-an-summary">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/analytics/summary</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">사용량 통계 요약 조회 — 기간 내 응답 수, 토큰 합계, 평균/p95 지연시간을 돌려준다. SCR-005 활동 개요의 요약 카드(E03~E06)와 토큰 비교(E08)에 사용한다.</div></div>
+    <h4>요청 예시</h4>
+    <pre><code>GET /analytics/summary?start=2026-08-11T00:00:00%2B09:00&amp;end=2026-09-10T00:00:00%2B09:00
+Authorization: Bearer ...</code></pre>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">SummaryResult</span></h4>
+    <pre><code>{
+  "start": "2026-08-10T15:00:00Z",
+  "end": "2026-09-09T15:00:00Z",
+  "coverage": {
+    "source": "redis_usage_log", "scope": "all_users",
+    "max_logs_per_conversation": 50, "complete_history": false,
+    "timestamp_semantics": "logged_at", "successful_responses_only": true,
+    "skipped_invalid_logs": 0
+  },
+  "conversation_count": 28,
+  "active_conversation_count": 10,
+  "metrics": {
+    "request_count": 15,
+    "prompt_tokens": 37294,
+    "response_tokens": 1521,
+    "total_tokens": 38815,
+    "missing_usage_count": 0,
+    "avg_latency_ms": 2812.4,
+    "p95_latency_ms": 9412
+  }
+}</code></pre>
+    <h4>필드 설명</h4>
+    <table><thead><tr><th>필드</th><th>설명</th><th>화면 표시</th></tr></thead><tbody>
+      <tr><td><code>conversation_count</code></td><td>기간과 무관하게 존재하는 대화 수 (삭제된 대화의 잔여 로그 포함)</td><td>—</td></tr>
+      <tr><td><code>active_conversation_count</code></td><td>기간 내 로그가 1건 이상인 대화 수</td><td>—</td></tr>
+      <tr><td><code>metrics.request_count</code></td><td>기간 내 정상 완료 응답 수</td><td>E03 “N건”</td></tr>
+      <tr><td><code>metrics.avg_latency_ms</code> / <code>p95_latency_ms</code></td><td>지연시간 평균(ms, 소수 2자리) / 95번째 백분위(ms). 로그가 없으면 <code>null</code></td><td>E04 “2.8초”, 보조 “p95 9.4초” (초 단위 소수 1자리로 변환)</td></tr>
+      <tr><td><code>metrics.prompt_tokens</code> / <code>response_tokens</code> / <code>total_tokens</code></td><td>토큰 합계. 값이 없는 로그는 0으로 합산</td><td>E05, E06, E08</td></tr>
+      <tr><td><code>metrics.missing_usage_count</code></td><td>토큰 정보가 하나라도 없는 로그 수</td><td>E09 “토큰 미수집 N건”</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="endpoint" id="ep-an-logs">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/analytics/logs</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">사용량 로그 목록 조회 — 응답 1건당 1행을 요청 시각 내림차순으로 돌려준다. SCR-006 사용 로그 표와 SCR-005 응답 시간 추이(최근 5건)에 사용한다.</div></div>
+    <h4>요청 예시</h4>
+    <pre><code>GET /analytics/logs?limit=50&amp;offset=0
+Authorization: Bearer ...</code></pre>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">LogsResult</span></h4>
+    <pre><code>{
+  "start": "2026-08-10T15:00:00Z",
+  "end": "2026-09-09T15:00:00Z",
+  "coverage": { "...": "..." },
+  "total": 15,
+  "limit": 50,
+  "offset": 0,
+  "items": [
+    {
+      "requested_at": "2026-09-09T01:31:20.512Z",
+      "latency_ms": 6213,
+      "prompt_tokens": 2527,
+      "response_tokens": 183,
+      "total_tokens": 2710,
+      "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "conversation_title": "복리후생 제도를 알려주세요."
+    }
+  ]
+}</code></pre>
+    <h4>필드 규칙</h4>
+    <table><thead><tr><th>필드</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>total</code></td><td>기간 내 전체 로그 수. 전체 페이지 수 = <code>ceil(total / limit)</code></td></tr>
+      <tr><td><code>items[].latency_ms</code></td><td>요청 시작부터 스트림 완료까지 ms. 화면은 초 단위 소수 1자리</td></tr>
+      <tr><td><code>items[].prompt_tokens</code> 등</td><td>모델이 usage를 주지 않은 경우 <code>null</code> → 화면은 <code>—</code></td></tr>
+      <tr><td><code>items[].conversation_title</code></td><td>대화가 삭제된 경우 <code>"삭제되었거나 정보가 없는 대화"</code>, 제목이 비어 있으면 <code>"대화 미지정"</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="endpoint" id="ep-an-conv">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/analytics/conversations</span><span class="lock">🔒 Bearer</span>
+      <div class="summary">대화별 사용량 통계 조회 — 대화 단위로 지표를 묶어 응답 수 내림차순으로 돌려준다. SCR-007 대화별 통계 표에 사용한다.</div></div>
+    <h4>요청 예시</h4>
+    <pre><code>GET /analytics/conversations?limit=50&amp;offset=0
+Authorization: Bearer ...</code></pre>
+    <h4>응답 예시 <span class="status s2">200</span> <span class="pill">ConversationsResult</span></h4>
+    <pre><code>{
+  "start": "2026-08-10T15:00:00Z",
+  "end": "2026-09-09T15:00:00Z",
+  "coverage": { "...": "..." },
+  "total": 28,
+  "limit": 50,
+  "offset": 0,
+  "items": [
+    {
+      "conversation_id": "195b36fb-c060-4188-8ab4-e2ccc0d9b8e4",
+      "conversation_title": "경조사 휴가 기준을 알려주세요.",
+      "request_count": 4,
+      "prompt_tokens": 9872,
+      "response_tokens": 269,
+      "total_tokens": 10141,
+      "missing_usage_count": 0,
+      "avg_latency_ms": 2510.25,
+      "p95_latency_ms": 5512
+    }
+  ]
+}</code></pre>
+    <h4>필드 규칙</h4>
+    <table><thead><tr><th>필드</th><th>설명</th></tr></thead><tbody>
+      <tr><td><code>total</code></td><td>존재하는 대화 수 (기간 내 로그가 0건인 대화도 <code>request_count: 0</code>으로 포함)</td></tr>
+      <tr><td><code>items</code> 정렬</td><td><code>request_count</code> 내림차순, 동률이면 <code>conversation_id</code> 오름차순</td></tr>
+      <tr><td><code>avg_latency_ms</code> / <code>p95_latency_ms</code></td><td>로그가 0건인 대화는 <code>null</code></td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- ---------------- 시스템 ---------------- -->
+  <h3 id="g-system">3.5 시스템</h3>
+  <div class="endpoint" id="ep-health">
+    <div class="head"><span class="badge GET">GET</span><span class="path">/health</span><span class="lock open">인증 불필요</span>
+      <div class="summary">백엔드 상태 확인 — 프로세스가 요청을 받을 수 있는지만 확인한다. DB · Redis · Gemini 연결 상태는 검사하지 않는다.</div></div>
+    <div class="two">
+      <div><h4>요청 예시</h4><pre><code>GET /health</code></pre></div>
+      <div><h4>응답 예시 <span class="status s2">200</span></h4><pre><code>{ "status": "ok" }</code></pre></div>
+    </div>
+    <p class="cap">배포 플랫폼(Render)의 헬스체크와 프런트엔드의 “백엔드 서버에 연결할 수 없습니다”(ST-004) 판정에 사용한다.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="errors">4. 오류 코드</h2>
+  <table>
+    <thead><tr><th>HTTP</th><th>발생 엔드포인트</th><th><code>detail</code></th><th>원인</th><th>화면 상태 (설계서)</th></tr></thead>
+    <tbody>
+      <tr><td class="status s4">400</td><td><code>POST /auth/signup</code></td><td>Supabase 메시지</td><td>가입 실패 (중복 이메일, 비밀번호 정책 등)</td><td>SCR-001-E09 상태 메시지</td></tr>
+      <tr><td class="status s4">401</td><td><code>POST /auth/login</code></td><td>Supabase 메시지</td><td>인증 정보 불일치</td><td>SCR-001-E09</td></tr>
+      <tr><td class="status s4">401</td><td>🔒 전체</td><td><code>유효하지 않은 토큰입니다</code></td><td>토큰 없음 · 만료 · 위조</td><td>ST-002 / ST-003 세션 만료 → SCR-001 이동</td></tr>
+      <tr><td class="status s4">404</td><td><code>/conversations/{id}/*</code>, <code>DELETE /me/conversations/{id}</code>, <code>/analytics/*?conversation_id=</code></td><td><code>conversation not found</code></td><td>없거나 타인 소유 (구분하지 않음)</td><td>“대화를 고르세요.” 방어 상태</td></tr>
+      <tr><td class="status s4">404</td><td><code>GET /me/profile</code></td><td><code>프로필을 찾을 수 없습니다</code></td><td>프로필 행 없음</td><td>—</td></tr>
+      <tr><td class="status s4">422</td><td>전체</td><td><code>ValidationError[]</code></td><td>필수 필드 누락, 타입 · 형식 · 범위 위반</td><td>ST-001 필수값 누락 (클라이언트 선검증)</td></tr>
+      <tr><td class="status s4">422</td><td><code>/analytics/*</code></td><td><code>start &lt; end이며 조회 기간은 최대 366일이어야 합니다</code></td><td>기간 역전 · 366일 초과</td><td>—</td></tr>
+      <tr><td class="status s5">503</td><td><code>POST /conversations/{id}/chat</code></td><td><code>선택한 규정 파일을 읽을 수 없습니다. ...</code></td><td>규정 MD 누락 · 인코딩 · 빈 파일</td><td>답변 생성 실패 → 실패 질문 보관</td></tr>
+      <tr><td class="status s5">503</td><td><code>/analytics/*</code></td><td><code>사용량 로그 저장소에 연결할 수 없습니다</code></td><td>Redis 연결 실패</td><td>ST-009 분석 API 실패</td></tr>
+      <tr><td><b>SSE error</b></td><td><code>POST /conversations/{id}/chat</code> (HTTP 200)</td><td><code>{"error": "..."}</code> 이벤트</td><td>Gemini 한도 초과(429) · 모델 오류 · 빈 응답</td><td>ST-006 AI 요청 한도 초과 / 답변 생성 실패</td></tr>
+      <tr><td><b>연결 실패</b></td><td>전체</td><td>(응답 없음)</td><td>서버 다운 · 네트워크</td><td>ST-004 백엔드 연결 실패</td></tr>
+      <tr><td><b>타임아웃</b></td><td><code>POST /conversations/{id}/chat</code></td><td>(클라이언트 판단)</td><td>스트림 지연</td><td>ST-005 응답 시간 초과</td></tr>
+    </tbody>
+  </table>
+  <h4>422 응답 본문 형식 <span class="pill">HTTPValidationError</span></h4>
+  <pre><code>{
+  "detail": [
+    {
+      "loc": ["body", "title"],
+      "msg": "String should have at most 100 characters",
+      "type": "string_too_long",
+      "input": "....",
+      "ctx": { "max_length": 100 }
+    }
+  ]
+}</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="schemas">5. 스키마 정의</h2>
+  <p><code>components.schemas</code> 기준. 타입 뒤의 <code>?</code>는 <code>null</code> 허용을 뜻한다.</p>
+
+  <div class="two">
+    <div>
+      <h4>SignupRequest · LoginRequest</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>필수</th></tr></thead><tbody>
+        <tr><td><code>email</code></td><td>string</td><td>✓</td></tr>
+        <tr><td><code>password</code></td><td>string</td><td>✓</td></tr>
+      </tbody></table>
+      <h4>TokenResponse</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>비고</th></tr></thead><tbody>
+        <tr><td><code>access_token</code></td><td>string?</td><td>이메일 확인 대기 시 null</td></tr>
+        <tr><td><code>user_id</code></td><td>string</td><td>UUID</td></tr>
+        <tr><td><code>email</code></td><td>string</td><td></td></tr>
+      </tbody></table>
+      <h4>ProfileOut</h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td><code>id</code></td><td>string (uuid)</td></tr>
+        <tr><td><code>username</code></td><td>string</td></tr>
+        <tr><td><code>created_at</code></td><td>string (date-time)</td></tr>
+      </tbody></table>
+      <h4>MyConversationCreate</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>title</code></td><td>string</td><td>1 ~ 100자</td></tr>
+      </tbody></table>
+      <h4>ConversationOut</h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td><code>id</code></td><td>string (uuid)</td></tr>
+        <tr><td><code>user_id</code></td><td>string (uuid)</td></tr>
+        <tr><td><code>title</code></td><td>string</td></tr>
+        <tr><td><code>created_at</code></td><td>string (date-time)</td></tr>
+      </tbody></table>
+      <h4>ChatRequest</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>필수</th></tr></thead><tbody>
+        <tr><td><code>content</code></td><td>string</td><td>✓</td></tr>
+        <tr><td><code>tone</code></td><td>string?</td><td>예약</td></tr>
+        <tr><td><code>length</code></td><td>string?</td><td>예약</td></tr>
+      </tbody></table>
+      <h4>MessageOut</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>비고</th></tr></thead><tbody>
+        <tr><td><code>id</code></td><td>string (uuid)</td><td></td></tr>
+        <tr><td><code>conversation_id</code></td><td>string (uuid)</td><td></td></tr>
+        <tr><td><code>role</code></td><td>string</td><td><code>user</code> · <code>assistant</code> · <code>system</code></td></tr>
+        <tr><td><code>content</code></td><td>string</td><td></td></tr>
+        <tr><td><code>created_at</code></td><td>string (date-time)</td><td></td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <h4>Coverage</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>기본값</th></tr></thead><tbody>
+        <tr><td><code>source</code></td><td>string</td><td><code>redis_usage_log</code></td></tr>
+        <tr><td><code>scope</code></td><td>string</td><td><code>all_users</code></td></tr>
+        <tr><td><code>max_logs_per_conversation</code></td><td>integer</td><td>50</td></tr>
+        <tr><td><code>complete_history</code></td><td>boolean</td><td>false</td></tr>
+        <tr><td><code>timestamp_semantics</code></td><td>string</td><td><code>logged_at</code></td></tr>
+        <tr><td><code>successful_responses_only</code></td><td>boolean</td><td>true</td></tr>
+        <tr><td><code>skipped_invalid_logs</code></td><td>integer</td><td>0</td></tr>
+      </tbody></table>
+      <h4>Metrics</h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td><code>request_count</code></td><td>integer</td></tr>
+        <tr><td><code>prompt_tokens</code></td><td>integer</td></tr>
+        <tr><td><code>response_tokens</code></td><td>integer</td></tr>
+        <tr><td><code>total_tokens</code></td><td>integer</td></tr>
+        <tr><td><code>missing_usage_count</code></td><td>integer</td></tr>
+        <tr><td><code>avg_latency_ms</code></td><td>number?</td></tr>
+        <tr><td><code>p95_latency_ms</code></td><td>integer?</td></tr>
+      </tbody></table>
+      <h4>ConversationMetrics <span class="cap">(Metrics 확장)</span></h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td>Metrics의 모든 필드</td><td></td></tr>
+        <tr><td><code>conversation_id</code></td><td>string (uuid)</td></tr>
+        <tr><td><code>conversation_title</code></td><td>string</td></tr>
+      </tbody></table>
+      <h4>LogEntry</h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td><code>requested_at</code></td><td>string (date-time)</td></tr>
+        <tr><td><code>latency_ms</code></td><td>integer ≥ 0</td></tr>
+        <tr><td><code>prompt_tokens</code></td><td>integer? ≥ 0</td></tr>
+        <tr><td><code>response_tokens</code></td><td>integer? ≥ 0</td></tr>
+        <tr><td><code>total_tokens</code></td><td>integer? ≥ 0</td></tr>
+        <tr><td><code>conversation_id</code></td><td>string (uuid)</td></tr>
+        <tr><td><code>conversation_title</code></td><td>string</td></tr>
+      </tbody></table>
+      <h4>SummaryResult · LogsResult · ConversationsResult</h4>
+      <table><thead><tr><th>필드</th><th>타입</th><th>포함 스키마</th></tr></thead><tbody>
+        <tr><td><code>start</code>, <code>end</code></td><td>string (date-time)</td><td>공통</td></tr>
+        <tr><td><code>coverage</code></td><td>Coverage</td><td>공통</td></tr>
+        <tr><td><code>conversation_count</code>, <code>active_conversation_count</code></td><td>integer</td><td>Summary</td></tr>
+        <tr><td><code>metrics</code></td><td>Metrics</td><td>Summary</td></tr>
+        <tr><td><code>total</code>, <code>limit</code>, <code>offset</code></td><td>integer</td><td>Logs · Conversations</td></tr>
+        <tr><td><code>items</code></td><td>LogEntry[] / ConversationMetrics[]</td><td>Logs / Conversations</td></tr>
+      </tbody></table>
+      <h4>HTTPValidationError · ValidationError</h4>
+      <table><thead><tr><th>필드</th><th>타입</th></tr></thead><tbody>
+        <tr><td><code>detail</code></td><td>ValidationError[]</td></tr>
+        <tr><td><code>ValidationError.loc</code></td><td>(string | integer)[]</td></tr>
+        <tr><td><code>ValidationError.msg</code></td><td>string</td></tr>
+        <tr><td><code>ValidationError.type</code></td><td>string</td></tr>
+        <tr><td><code>ValidationError.input</code>, <code>ctx</code></td><td>any, object (선택)</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="appendix">6. 부록 · 처리 정책</h2>
+
+  <h3>6.1 규정 문서 선택 규칙 (RAG 대체)</h3>
+  <p>벡터 검색 대신 <b>키워드 매칭</b>으로 질문과 관련된 규정 MD 파일만 골라 시스템 프롬프트에 넣는다. 파일은 <code>backend/data/regulations/</code>에 두며 8종이다.</p>
+  <table>
+    <thead><tr><th>규정 파일</th><th>대표 키워드 (일부)</th></tr></thead>
+    <tbody>
+      <tr><td>급여규정.md</td><td>급여, 월급, 연봉, 야근 수당, 연말정산, 원천징수</td></tr>
+      <tr><td>휴가_근태규정.md</td><td>휴가, 연차, 반차, 병가, 육아휴직, 유연근무</td></tr>
+      <tr><td>인사규정.md</td><td>수습, 재직증명서, 부서 이동, 퇴사, 인수인계</td></tr>
+      <tr><td>신입사원_온보딩가이드.md</td><td>온보딩, 첫 출근, 장비 수령, 필수 교육</td></tr>
+      <tr><td>시설이용규정.md</td><td>사원증, 회의실, 방문객, 자율좌석, 주차</td></tr>
+      <tr><td>복리후생규정.md</td><td>복지포인트, 건강검진, 자기계발, 도서, 식대, 경조, 심리상담</td></tr>
+      <tr><td>출장_경비처리규정.md</td><td>출장, 교통비, 숙박, 법인카드, 경비 정산</td></tr>
+      <tr><td>정보보안_IT이용규정.md</td><td>계정, 비밀번호, MFA, VPN, 피싱, 노트북 분실</td></tr>
+    </tbody>
+  </table>
+  <ol>
+    <li>현재 질문에서 “영수증·증빙” 같은 공통어를 제외한 키워드가 걸리면 그 파일들을 선택한다.</li>
+    <li>없으면 “다른 질문·주제 바꿔” 표현이 있는지 확인하고, 있으면 아무 파일도 선택하지 않는다.</li>
+    <li>“언제까지?”, “쉽게 설명” 같은 <b>후속 질문 표현</b>이면 직전 사용자 질문(초기화 지점 이후, 최근 20개 내)의 주제를 잇는다.</li>
+    <li>선택된 파일이 없으면 모델은 규정의 금액·기한·출처를 답하지 않고 확인 질문 하나만 한다.</li>
+    <li>답변 마지막 줄에는 <code>[규정명 &gt; 항목명]</code> 근거 표기를 붙인다 — 화면의 “근거·출처”(SCR-004-E05)는 이 표기를 그대로 보여준다.</li>
+  </ol>
+
+  <h3>6.2 저장 · 캐시 정책</h3>
+  <table>
+    <thead><tr><th>대상</th><th>저장소</th><th>키</th><th>수명 · 크기</th><th>무효화</th></tr></thead>
+    <tbody>
+      <tr><td>토큰 검증 결과</td><td>Redis</td><td><code>session:{sha256(token)}</code></td><td>300초</td><td>TTL 만료</td></tr>
+      <tr><td>메시지 목록</td><td>Redis</td><td><code>messages:{conversation_id}</code></td><td>300초, 최대 20건</td><td>메시지 저장 시 삭제</td></tr>
+      <tr><td>사용량 로그</td><td>Redis (List)</td><td><code>usage_log:{conversation_id}</code></td><td>대화당 최근 50건 (LTRIM)</td><td>대화 삭제와 무관하게 유지</td></tr>
+      <tr><td>대화 · 메시지 · 프로필</td><td>Supabase Postgres</td><td>—</td><td>영구</td><td>사용자 삭제 요청</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 대화 제목 자동 생성</h3>
+  <ul>
+    <li>대화 생성 시 제목은 클라이언트가 보낸 값(“새 대화”)이다.</li>
+    <li><b>첫 번째</b> 사용자 메시지가 저장될 때 본문의 연속 공백을 하나로 줄이고 앞 <b>50자</b>를 제목으로 갱신한다. 비어 있으면 “새 대화”.</li>
+    <li>두 번째 이후 메시지는 제목을 바꾸지 않는다. 클라이언트는 <code>done</code> 이벤트 후 <code>GET /me/conversations</code>로 제목을 다시 읽는다.</li>
+  </ul>
+
+  <h3>6.4 알려진 제한 · 후속 과제</h3>
+  <ul>
+    <li><code>GET /conversations/{id}/messages</code>는 최대 20건 고정 — 페이지 파라미터 노출 필요.</li>
+    <li><code>ChatRequest.tone</code> / <code>length</code>는 수신만 하고 프롬프트에 반영하지 않음.</li>
+    <li>서버 측 요청 빈도 제한(rate limit) 없음. Gemini 한도 초과는 SSE <code>error</code> 이벤트로만 드러난다.</li>
+    <li>분석 API는 로그인 사용자 전체에 열려 있음 — 운영 전환 시 관리자 권한 분리 필요.</li>
+    <li><code>/health</code>는 프로세스 생존만 확인하며 의존 서비스 상태를 포함하지 않는다.</li>
+  </ul>
+
+  <footer>AskHR API 설계 문서 v0.1.0 · 2026-09-09 · 배포 서버 <code>openapi.json</code>과 백엔드 소스를 기준으로 작성. Swagger UI: <a href="https://two026-aio2-ask-hr-backend.onrender.com/docs">/docs</a></footer>
+</main>
+</div>
+</body>
+</html>

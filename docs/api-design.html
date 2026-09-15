@@ -46,6 +46,10 @@
   .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:18px 0 0}
   .meta div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
   .meta b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .source-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 0}
+  .source-notice{margin:0;color:var(--muted);font-size:12px}
+  .source-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border-radius:8px;background:var(--brand-2);color:#fff;font-size:13px;font-weight:700;text-decoration:none}
+  .source-link:hover{background:var(--brand);color:#fff;text-decoration:none}
   .badge{display:inline-block;font-weight:700;font-size:12px;padding:2px 8px;border-radius:6px;letter-spacing:.03em;font-family:Consolas,monospace}
   .GET{color:var(--get);background:var(--get-bg)} .POST{color:var(--post);background:var(--post-bg)} .DELETE{color:var(--del);background:var(--del-bg)}
   .lock{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
@@ -113,6 +117,10 @@
     <div><b>대화형 문서 (Swagger UI)</b><a href="https://two026-aio2-ask-hr-backend.onrender.com/docs">/docs</a> · <a href="https://two026-aio2-ask-hr-backend.onrender.com/openapi.json">/openapi.json</a></div>
     <div><b>근거</b>배포 서버의 <code>openapi.json</code> + 백엔드 소스 검토 (라우터 · 의존성 · 스키마)</div>
     <div><b>관련 문서</b>화면 설계서 (SCR / COM / ST ID 상호 참조)</div>
+  </div>
+  <div class="source-actions">
+    <a class="source-link" href="https://github.com/munchkin112/AIO_2-team-Project-ASKHR/blob/main/docs/markdown/api-design.md">원본 Markdown 보기</a>
+    <p class="source-notice">문서가 정상적으로 표시되지 않는 경우 Markdown 원본 문서를 확인해주세요.</p>
   </div>
 
   <!-- ============================================================ -->

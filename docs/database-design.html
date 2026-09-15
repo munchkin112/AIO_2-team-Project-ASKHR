@@ -42,6 +42,10 @@
   .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:18px 0 0}
   .meta div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
   .meta b{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:2px}
+  .source-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 0}
+  .source-notice{margin:0;color:var(--muted);font-size:12px}
+  .source-link{display:inline-flex;align-items:center;justify-content:center;padding:8px 13px;border-radius:8px;background:var(--brand-2);color:#fff;font-size:13px;font-weight:700;text-decoration:none}
+  .source-link:hover{background:var(--brand);color:#fff;text-decoration:none}
   .tag{display:inline-block;font-weight:700;font-size:11px;padding:1px 7px;border-radius:5px;font-family:Consolas,monospace;letter-spacing:.03em}
   .PK{color:#fff;background:var(--pk)} .FK{color:#fff;background:var(--fk)} .NN{color:var(--muted);background:#eee}
   .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600}
@@ -108,6 +112,10 @@
     <div><b>작성일</b>2026-09-09</div>
     <div><b>근거</b>설계서(md) · <code>docs/db/01_create_table.sql</code> (트리거 · RLS) · 백엔드 앱 코드 (접근 경로 · 제약)</div>
     <div><b>관련 문서</b>API 설계 문서 · 화면 설계서</div>
+  </div>
+  <div class="source-actions">
+    <a class="source-link" href="https://github.com/munchkin112/AIO_2-team-Project-ASKHR/blob/main/docs/markdown/database-design.md">원본 Markdown 보기</a>
+    <p class="source-notice">문서가 정상적으로 표시되지 않는 경우 Markdown 원본 문서를 확인해주세요.</p>
   </div>
   <div class="legend">
     <span><span class="src ok">코드 확인</span> SQL 또는 앱 코드에서 확인한 사실</span>
